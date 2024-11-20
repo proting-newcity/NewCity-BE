@@ -3,11 +3,11 @@
 namespace App\Http\Middleware;
 
 use Closure;
-use Illuminate\Contracts\Auth\MustVerifyuUsername;
+use Illuminate\Contracts\Auth\MustVerifyUsername;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class EnsureuUsernameIsVerified
+class EnsureUsernameIsVerified
 {
     /**
      * Handle an incoming request.
@@ -17,8 +17,8 @@ class EnsureuUsernameIsVerified
     public function handle(Request $request, Closure $next): Response
     {
         if (! $request->user() ||
-            ($request->user() instanceof MustVerifyuUsername &&
-            ! $request->user()->hasVerifieduUsername())) {
+            ($request->user() instanceof MustVerifyUsername &&
+            ! $request->user()->hasVerifiedUsername())) {
             return response()->json(['message' => 'Your username address is not verified.'], 409);
         }
 

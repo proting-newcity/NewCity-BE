@@ -7,18 +7,18 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
-class uUsernameVerificationNotificationController extends Controller
+class UsernameVerificationNotificationController extends Controller
 {
     /**
      * Send a new username verification notification.
      */
     public function store(Request $request): JsonResponse|RedirectResponse
     {
-        if ($request->user()->hasVerifieduUsername()) {
+        if ($request->user()->hasVerifiedUsername()) {
             return redirect()->intended('/dashboard');
         }
 
-        $request->user()->senduUsernameVerificationNotification();
+        $request->user()->sendUsernameVerificationNotification();
 
         return response()->json(['status' => 'verification-link-sent']);
     }

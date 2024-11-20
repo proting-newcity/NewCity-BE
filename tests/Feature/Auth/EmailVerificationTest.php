@@ -19,7 +19,7 @@ test('username can be verified', function () {
     $response = $this->actingAs($user)->get($verificationUrl);
 
     Event::assertDispatched(Verified::class);
-    expect($user->fresh()->hasVerifieduUsername())->toBeTrue();
+    expect($user->fresh()->hasVerifiedUsername())->toBeTrue();
     $response->assertRedirect(config('app.frontend_url').'/dashboard?verified=1');
 });
 
@@ -34,5 +34,5 @@ test('username is not verified with invalid hash', function () {
 
     $this->actingAs($user)->get($verificationUrl);
 
-    expect($user->fresh()->hasVerifieduUsername())->toBeFalse();
+    expect($user->fresh()->hasVerifiedUsername())->toBeFalse();
 });

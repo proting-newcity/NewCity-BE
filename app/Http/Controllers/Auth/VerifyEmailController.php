@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Auth\Events\Verified;
-use Illuminate\Foundation\Auth\uUsernameVerificationRequest;
+use Illuminate\Foundation\Auth\UsernameVerificationRequest;
 use Illuminate\Http\RedirectResponse;
 
 class VerifyEmailController extends Controller
@@ -12,15 +12,15 @@ class VerifyEmailController extends Controller
     /**
      * Mark the authenticated user's username address as verified.
      */
-    public function __invoke(uUsernameVerificationRequest $request): RedirectResponse
+    public function __invoke(UsernameVerificationRequest $request): RedirectResponse
     {
-        if ($request->user()->hasVerifieduUsername()) {
+        if ($request->user()->hasVerifiedUsername()) {
             return redirect()->intended(
                 config('app.frontend_url').'/dashboard?verified=1'
             );
         }
 
-        if ($request->user()->markuUsernameAsVerified()) {
+        if ($request->user()->markUsernameAsVerified()) {
             event(new Verified($request->user()));
         }
 
