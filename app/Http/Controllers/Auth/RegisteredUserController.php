@@ -21,11 +21,9 @@ class RegisteredUserController extends Controller
      *
      * @throws \Illuminate\Validation\ValidationException
      */
-    public function store(Request $request)
+    public function store(Request $request): Response
     {
-        Log::info('Reached the store method');
-        
-        // Validate the incoming request
+
         try {
             $validatedData = $request->validate([
                 'name' => ['required', 'string', 'max:255'],
@@ -38,48 +36,36 @@ class RegisteredUserController extends Controller
             return response()->json(['errors' => $e->errors()], 422);
         }
 
-        // Create the User record
         $user = User::create([
             'name' => $request->name,
             'username' => $request->username,
             'password' => Hash::make($request->password),
         ]);
 
-        // Check if the user has a role and create a role-specific model entry
         if ($request->role) {
             switch ($request->role) {
                 case 'masyarakat':
-                    // Create a Masyarakat record
                     Masyarakat::create([
                         'id' => $user->id,
-                        'phone' => $request->phone ?? null,  // Assuming phone is provided in request
+                        'phone' => $request->phone,
                     ]);
                     break;
 
                 case 'pemerintah':
-                    // Create a Pemerintah record
                     Pemerintah::create([
                         'id' => $user->id,
-                        'status' => $request->status ?? true,  // Assuming status is provided, default to true
-                        'phone' => $request->phone ?? null,    // Assuming phone is provided in request
-                        'institusi_id' => $request->institusi_id,  // Assuming institusi_id is provided
+                        'status' => $request->status ?? true, 
+                        'phone' => $request->phone ?? null, 
+                        'institusi_id' => $request->institusi_id,
                     ]);
                     break;
             }
         }
 
-        // Fire the Registered event
         event(new Registered($user));
 
-        // Create a token for the user
-        $token = $user->createToken('auth_token')->plainTextToken;
+        Auth::login($user);
 
-        // Return response with the token and user info
-        return response()->json([
-            'access_token' => $token,
-            'token_type' => 'Bearer',
-            'user' => $user,
-            'role' => $request->role,  // Return the role in the response
-        ]);
+        return response()->noContent();
     }
 }
