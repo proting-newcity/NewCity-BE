@@ -15,6 +15,8 @@ class Masyarakat extends Model
     // The primary key for the model
     protected $primaryKey = 'id';
 
+    public $timestamps = false;
+
     // Disable auto-incrementing if you're using a custom primary key
     public $incrementing = false;
 

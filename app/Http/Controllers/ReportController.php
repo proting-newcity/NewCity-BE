@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Report;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Storage;
 
 class ReportController extends Controller
 {
@@ -14,6 +15,9 @@ class ReportController extends Controller
     public function index()
     {
         $reports = Report::all();
+        foreach ($reports as $report) {
+            $report->foto = Storage::url(str_replace('storage/', '', $report->foto));
+        }
         return response()->json($reports, 200);
     }
 
@@ -28,10 +32,10 @@ class ReportController extends Controller
             'deskripsi' => 'required|string',
             'lokasi' => 'required|string',
             'status' => 'required|array',
-            'foto' => 'required|file',
+            'foto' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
             'id_masyarakat' => 'required|exists:masyarakat,id',
-            'id_pemerintah' => 'required|exists:pemerintah,id',
-            'id_kategori' => 'required|exists:kategori_report,id',
+            'id_pemerintah' => 'nullable|exists:pemerintah,id',
+            'id_kategori' => 'nullable|exists:kategori_report,id',
         ]);
 
         if ($validator->fails()) {
@@ -40,7 +44,7 @@ class ReportController extends Controller
 
         // Handle file upload
         $foto = $request->file('foto');
-        $fotoData = file_get_contents($foto);
+        $fotoPath = $foto->store('public/reports'); 
 
         // Create report
         $report = Report::create([
@@ -48,7 +52,7 @@ class ReportController extends Controller
             'deskripsi' => $request->deskripsi,
             'lokasi' => $request->lokasi,
             'status' => $request->status,
-            'foto' => $fotoData,
+            'foto' => $fotoPath,
             'id_masyarakat' => $request->id_masyarakat,
             'id_pemerintah' => $request->id_pemerintah,
             'id_kategori' => $request->id_kategori,
@@ -83,6 +87,8 @@ class ReportController extends Controller
             return response()->json(['message' => 'Report not found'], 404);
         }
 
+        $report->foto = Storage::url(str_replace('storage/', '', $report->foto));
+
         return response()->json($report, 200);
     }
 
@@ -102,7 +108,7 @@ class ReportController extends Controller
             'deskripsi' => 'string',
             'lokasi' => 'string',
             'status' => 'array',
-            'foto' => 'file',
+            'foto' => 'required|file|mimes:jpeg,png,jpg,gif|max:2048',
             'id_masyarakat' => 'exists:masyarakat,id',
             'id_pemerintah' => 'exists:pemerintah,id',
             'id_kategori' => 'exists:kategori_report,id',
@@ -117,10 +123,12 @@ class ReportController extends Controller
             'judul', 'deskripsi', 'lokasi', 'status', 'id_masyarakat', 'id_pemerintah', 'id_kategori'
         ]));
 
-        // Update file if provided
         if ($request->hasFile('foto')) {
-            $foto = $request->file('foto');
-            $report->foto = file_get_contents($foto);
+            // Store the new file and get its path
+            $fotoPath = $request->file('foto')->store('public/reports');
+    
+            // Save the new file path to the report
+            $report->foto = $fotoPath;
             $report->save();
         }
 

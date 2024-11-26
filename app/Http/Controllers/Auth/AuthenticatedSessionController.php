@@ -22,6 +22,7 @@ class AuthenticatedSessionController extends Controller
             'username' => ['required', 'string'],
             'password' => ['required', 'string'],
             'role' => ['required', 'string', 'in:masyarakat,pemerintah,admin'],  // validasi role
+            'always_signed_in' => ['required', 'boolean'],
         ]);
 
         // cek credentials
@@ -48,6 +49,7 @@ class AuthenticatedSessionController extends Controller
             return response()->json(['message' => 'Unauthorized: Role mismatch'], 403);
         } else{
             // buat session
+            $lifetime = $request->always_signed_in ? 120 : 10080; // set exp (itungan menit)
             $request->session()->regenerate();
         }
 

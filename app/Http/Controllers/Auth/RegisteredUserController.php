@@ -21,7 +21,7 @@ class RegisteredUserController extends Controller
      *
      * @throws \Illuminate\Validation\ValidationException
      */
-    public function store(Request $request): Response
+    public function store(Request $request)
     {
 
         try {
@@ -30,7 +30,8 @@ class RegisteredUserController extends Controller
                 'username' => ['required', 'string', 'max:255', 'unique:user'],
                 'password' => ['required', 'confirmed', Rules\Password::defaults()],
                 'role' => ['nullable', 'string', 'in:masyarakat,pemerintah'],
-                'phone' => ['nullable', 'string', 'max:255'],
+                'institusi_id' => ['nullable', 'exists:institusi,id', 
+                'required_if:role,pemerintah'], // required kalau role pemerintah
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json(['errors' => $e->errors()], 422);
@@ -47,15 +48,15 @@ class RegisteredUserController extends Controller
                 case 'masyarakat':
                     Masyarakat::create([
                         'id' => $user->id,
-                        'phone' => $request->phone,
+                        'phone' => $request->username,
                     ]);
                     break;
 
                 case 'pemerintah':
                     Pemerintah::create([
                         'id' => $user->id,
-                        'status' => $request->status ?? true, 
-                        'phone' => $request->phone ?? null, 
+                        'status' => true, 
+                        'phone' => $request->username, 
                         'institusi_id' => $request->institusi_id,
                     ]);
                     break;
