@@ -12,6 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('report', function (Blueprint $table) {
+            $table->integer('id_pemerintah')->nullable()->change();
+            $table->integer('id_kategori')->nullable()->change();
+
             $table->foreign(['id_kategori'], 'kategori_report')->references(['id'])->on('kategori_report')->onUpdate('cascade')->onDelete('cascade');
             $table->foreign(['id_masyarakat'], 'masyarakat_report')->references(['id'])->on('masyarakat')->onUpdate('cascade')->onDelete('cascade');
             $table->foreign(['id_pemerintah'], 'pemerintah_report')->references(['id'])->on('pemerintah')->onUpdate('cascade')->onDelete('cascade');

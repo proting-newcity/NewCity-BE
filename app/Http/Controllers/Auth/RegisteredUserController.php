@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\Masyarakat;
+use App\Models\Pemerintah;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -21,12 +23,15 @@ class RegisteredUserController extends Controller
      */
     public function store(Request $request)
     {
-        Log::info('Reached the store method');
+
         try {
-            $request->validate([
+            $validatedData = $request->validate([
                 'name' => ['required', 'string', 'max:255'],
                 'username' => ['required', 'string', 'max:255', 'unique:user'],
                 'password' => ['required', 'confirmed', Rules\Password::defaults()],
+                'role' => ['nullable', 'string', 'in:masyarakat,pemerintah'],
+                'institusi_id' => ['nullable', 'exists:institusi,id', 
+                'required_if:role,pemerintah'], // required kalau role pemerintah
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json(['errors' => $e->errors()], 422);
@@ -38,14 +43,30 @@ class RegisteredUserController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
+        if ($request->role) {
+            switch ($request->role) {
+                case 'masyarakat':
+                    Masyarakat::create([
+                        'id' => $user->id,
+                        'phone' => $request->username,
+                    ]);
+                    break;
+
+                case 'pemerintah':
+                    Pemerintah::create([
+                        'id' => $user->id,
+                        'status' => true, 
+                        'phone' => $request->username, 
+                        'institusi_id' => $request->institusi_id,
+                    ]);
+                    break;
+            }
+        }
+
         event(new Registered($user));
 
-        $token = $user->createToken('auth_token')->plainTextToken;
+        Auth::login($user);
 
-        return response()->json([
-            'access_token' => $token,
-            'token_type' => 'Bearer',
-            'user' => $user
-        ]);
+        return response()->noContent();
     }
 }

@@ -17,10 +17,11 @@ return new class extends Migration
             $table->string('deskripsi');
             $table->string('lokasi');
             $table->json('status');
-            $table->binary('foto');
+            $table->string('foto');
             $table->integer('id_masyarakat')->index('masyarakat_fk');
             $table->integer('id_pemerintah')->index('pemerintah_fk');
             $table->integer('id_kategori')->index('kategori_fk');
+            $table->timestamps();
         });
     }
 

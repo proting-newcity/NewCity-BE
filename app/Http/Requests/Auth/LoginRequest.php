@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use App\Rules\Username;
 
 class LoginRequest extends FormRequest
 {
@@ -27,8 +28,9 @@ class LoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'username' => ['required', 'string', 'username'],
+            'username' => ['required', 'string'],
             'password' => ['required', 'string'],
+            'role' => ['required', 'string', 'in:masyarakat,pemerintah,admin'],
         ];
     }
 

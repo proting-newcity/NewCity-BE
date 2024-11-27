@@ -7,38 +7,66 @@ use App\Http\Requests\Auth\LoginRequest;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
+use App\Models\Masyarakat;
+use App\Models\Pemerintah;
+use App\Models\Admin;
 
 class AuthenticatedSessionController extends Controller
 {
     /**
      * Handle an incoming authentication request.
      */
-    public function store(Request $request)
+    public function store(LoginRequest $request)
     {
         $request->validate([
             'username' => ['required', 'string'],
             'password' => ['required', 'string'],
+            'role' => ['required', 'string', 'in:masyarakat,pemerintah,admin'],  // validasi role
+            'always_signed_in' => ['required', 'boolean'],
         ]);
 
+        // cek credentials
         if (!Auth::attempt($request->only('username', 'password'))) {
             return response()->json(['message' => 'Invalid login credentials'], 401);
         }
 
+        // ambil user
         $user = Auth::user();
-        $token = $user->createToken('auth_token')->plainTextToken;
 
-        return response()->json([
-            'access_token' => $token,
-            'token_type' => 'Bearer',
-            'user' => $user,
-            'status' => 'Login successful',
-        ]);
+        $userRole = null;
+
+        if (Masyarakat::where('id', $user->id)->exists()) {
+            $userRole = 'masyarakat';
+        } elseif (Pemerintah::where('id', $user->id)->exists()) {
+            $userRole = 'pemerintah';
+        } elseif (Admin::where('id', $user->id)->exists()) {
+            $userRole = 'admin';
+        }
+
+        // cek role sesuai
+        if ($userRole !== $request->role) {
+            Auth::logout();
+            return response()->json(['message' => 'Unauthorized: Role mismatch'], 403);
+        } else{
+            // buat session
+            $lifetime = $request->always_signed_in ? 120 : 10080; // set exp (itungan menit)
+            $request->session()->regenerate();
+        }
+
+        return response()->noContent();
     }
 
-    public function destroy(Request $request)
+    /**
+     * Logout and invalidate the token.
+     */
+    public function destroy(Request $request): Response
     {
-        $request->user()->currentAccessToken()->delete();
+        Auth::guard('web')->logout();
 
-        return response()->json(['message' => 'Logout successful']);
+        $request->session()->invalidate();
+
+        $request->session()->regenerateToken();
+
+        return response()->noContent();
     }
 }
