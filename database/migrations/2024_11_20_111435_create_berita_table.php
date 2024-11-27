@@ -15,7 +15,7 @@ return new class extends Migration
             $table->integer('id', true);
             $table->string('title', 50);
             $table->string('content');
-            $table->binary('photo');
+            $table->string('foto');
             $table->timestamp('tanggal')->useCurrentOnUpdate()->useCurrent();
             $table->string('status', 50);
             $table->integer('id_kategori')->index('kategori_fk');

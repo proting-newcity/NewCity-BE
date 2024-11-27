@@ -25,8 +25,9 @@ class ReportController extends Controller
      * Store a newly created report in storage.
      */
     public function store(Request $request)
-    {
-        // Validate request
+{
+    try {
+        // Validate the request data
         $validator = Validator::make($request->all(), [
             'judul' => 'required|string|max:100',
             'deskripsi' => 'required|string',
@@ -35,18 +36,16 @@ class ReportController extends Controller
             'foto' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
             'id_masyarakat' => 'required|exists:masyarakat,id',
             'id_pemerintah' => 'nullable|exists:pemerintah,id',
-            'id_kategori' => 'nullable|exists:kategori_report,id',
+            'id_kategori' => 'required|exists:kategori_report,id',
         ]);
 
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
         }
 
-        // Handle file upload
         $foto = $request->file('foto');
-        $fotoPath = $foto->store('public/reports'); 
+        $fotoPath = str_replace('public/', 'storage/', $foto->store('public/reports'));
 
-        // Create report
         $report = Report::create([
             'judul' => $request->judul,
             'deskripsi' => $request->deskripsi,
@@ -59,14 +58,20 @@ class ReportController extends Controller
         ]);
 
         return response()->json($report, 201);
+    } catch (\Exception $e) {
+        \Log::error('Error creating report: ' . $e->getMessage());
+
+        return response()->json([
+            'error' => 'An error occurred while creating the report. Please try again later.'
+        ], 500);
     }
+}
 
     /**
     * Get all reports by category ID.
     */
     public function getByCategory($categoryId)
     {
-        // Fetch reports where id_kategori matches the provided category ID
         $reports = Report::where('id_kategori', $categoryId)->get();
 
         if ($reports->isEmpty()) {
@@ -102,7 +107,6 @@ class ReportController extends Controller
             return response()->json(['message' => 'Report not found'], 404);
         }
 
-        // Validate request
         $validator = Validator::make($request->all(), [
             'judul' => 'string|max:100',
             'deskripsi' => 'string',
@@ -118,16 +122,13 @@ class ReportController extends Controller
             return response()->json($validator->errors(), 422);
         }
 
-        // Update fields if provided
         $report->update($request->only([
             'judul', 'deskripsi', 'lokasi', 'status', 'id_masyarakat', 'id_pemerintah', 'id_kategori'
         ]));
 
         if ($request->hasFile('foto')) {
-            // Store the new file and get its path
             $fotoPath = $request->file('foto')->store('public/reports');
     
-            // Save the new file path to the report
             $report->foto = $fotoPath;
             $report->save();
         }

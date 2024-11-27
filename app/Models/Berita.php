@@ -16,7 +16,7 @@ class Berita extends Model
     protected $primaryKey = 'id';
 
     // Kolom yang dapat diisi secara massal
-    protected $fillable = ['title', 'content', 'photo', 'tanggal', 'status', 'id_kategori'];
+    protected $fillable = ['title', 'content', 'foto', 'tanggal', 'status', 'id_kategori'];
 
     // Menyembunyikan atribut dalam serialisasi
     protected $hidden = [];

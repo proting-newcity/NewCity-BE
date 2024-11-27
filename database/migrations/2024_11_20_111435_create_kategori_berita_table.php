@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('kategori_berita', function (Blueprint $table) {
             $table->integer('id', true);
             $table->string('name', 50);
-            $table->binary('photo');
+            $table->string('foto');
         });
     }
 

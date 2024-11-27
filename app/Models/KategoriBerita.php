@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Kategori extends Model
+class KategoriBerita extends Model
 {
     use HasFactory;
 
@@ -16,10 +16,12 @@ class Kategori extends Model
     protected $primaryKey = 'id';
 
     // Kolom yang dapat diisi secara massal
-    protected $fillable = ['name', 'photo'];
+    protected $fillable = ['name', 'foto'];
 
     // Menyembunyikan atribut dalam serialisasi
     protected $hidden = [];
+    
+    public $timestamps = false;
 
     // Relasi dengan model Berita
     public function berita()
