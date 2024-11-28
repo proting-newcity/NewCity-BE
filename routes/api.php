@@ -22,22 +22,6 @@ route::get('/users',function(){
 Route::post('/register', [RegisteredUserController::class, 'store']);
 Route::post('/login', [AuthenticatedSessionController::class, 'store']);
 Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->middleware('auth:sanctum');
-Route::get('/berita', [BeritaController::class, 'indexWeb']);
-
-Route::prefix('kategori')->group(function () {
-    // get all kategori report
-    Route::get('/report', [KategoriController::class, 'indexReport']);
-
-    // get all kategori report
-    Route::get('/berita', [KategoriController::class, 'indexBerita']);
-    
-    // post kategori report
-    Route::post('/report', [KategoriController::class, 'storeReport']);
-
-    // post kategori berita
-    Route::post('/berita', [KategoriController::class, 'storeBerita']);
-    
-});
 
 Route::prefix('report')->group(function () {
     // get all
@@ -57,4 +41,31 @@ Route::prefix('report')->group(function () {
     
     // delete
     Route::delete('/{id}', [ReportController::class, 'destroy']);
+});
+
+Route::prefix('berita')->group(function () {
+    // get all berita
+    Route::get('/', [BeritaController::class, 'indexWeb']);
+    
+    // post berita
+    Route::post('/', [BeritaController::class, 'store']);
+    
+    // get by category berita
+    Route::get('/category/{categoryId}', [BeritaController::class, 'getByCategory']);
+    
+});
+
+Route::prefix('kategori')->group(function () {
+    // get all kategori report
+    Route::get('/report', [KategoriController::class, 'indexReport']);
+
+    // get all kategori report
+    Route::get('/berita', [KategoriController::class, 'indexBerita']);
+    
+    // post kategori report
+    Route::post('/report', [KategoriController::class, 'storeReport']);
+
+    // post kategori berita
+    Route::post('/berita', [KategoriController::class, 'storeBerita']);
+    
 });
