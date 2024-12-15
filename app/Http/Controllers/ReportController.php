@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Report;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class ReportController extends Controller
@@ -14,10 +15,7 @@ class ReportController extends Controller
      */
     public function index()
     {
-        $reports = Report::all();
-        foreach ($reports as $report) {
-            $report->foto = Storage::url(str_replace('storage/', '', $report->foto));
-        }
+        $reports = Report::paginate(10);
         return response()->json($reports, 200);
     }
 
@@ -27,13 +25,12 @@ class ReportController extends Controller
     public function store(Request $request)
 {
     try {
-        // Validate the request data
         $validator = Validator::make($request->all(), [
             'judul' => 'required|string|max:100',
             'deskripsi' => 'required|string',
             'lokasi' => 'required|string',
             'status' => 'required|array',
-            'foto' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'foto' => 'required|image|mimes:jpeg,png,jpg,gif',
             'id_masyarakat' => 'required|exists:masyarakat,id',
             'id_pemerintah' => 'nullable|exists:pemerintah,id',
             'id_kategori' => 'required|exists:kategori_report,id',
@@ -59,7 +56,7 @@ class ReportController extends Controller
 
         return response()->json($report, 201);
     } catch (\Exception $e) {
-        \Log::error('Error creating report: ' . $e->getMessage());
+        Log::error('Error creating report: ' . $e->getMessage());
 
         return response()->json([
             'error' => 'An error occurred while creating the report. Please try again later.'
@@ -72,7 +69,7 @@ class ReportController extends Controller
     */
     public function getByCategory($categoryId)
     {
-        $reports = Report::where('id_kategori', $categoryId)->get();
+        $reports = Report::where('id_kategori', $categoryId)->paginate(10);
 
         if ($reports->isEmpty()) {
             return response()->json(['message' => 'No reports found for this category'], 404);
@@ -92,10 +89,29 @@ class ReportController extends Controller
             return response()->json(['message' => 'Report not found'], 404);
         }
 
-        $report->foto = Storage::url(str_replace('storage/', '', $report->foto));
-
         return response()->json($report, 200);
     }
+
+    public function searchReports(Request $request)
+    {
+        $validated = $request->validate([
+            'search' => 'required|string|max:255',
+        ]);
+    
+        $search = $validated['search'];
+    
+        $reports = Report::where('judul', 'like', "%$search%")
+                         ->orWhere('deskripsi', 'like', "%$search%")
+                         ->paginate(10);
+    
+
+        if ($reports->isEmpty()) {
+            return response()->json(['message' => 'No reports found'], 404);
+        }
+    
+        return response()->json($reports, 200);
+    }
+    
 
     /**
      * Update the specified report in storage.

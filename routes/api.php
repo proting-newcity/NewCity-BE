@@ -30,6 +30,9 @@ Route::prefix('report')->group(function () {
     // post
     Route::post('/', [ReportController::class, 'store']);
     
+    // search
+    Route::get('/search', [ReportController::class, 'searchReports']);
+    
     // get by category
     Route::get('/category/{categoryId}', [ReportController::class, 'getByCategory']);
     
