@@ -89,7 +89,19 @@ class ReportController extends Controller
             return response()->json(['message' => 'Report not found'], 404);
         }
 
-        return response()->json($report, 200);
+        return response()->json([
+            'report' => $report,
+            'masyarakat' => [
+                'id' => $report->masyarakat->id,
+                'name' => $report->masyarakat->user->name,
+            ], 'pemerintah' => [
+                'id' => $report->pemerintah->id ?? null,
+                'name' => $report->pemerintah->user->name ?? null,
+            ], 'kategori' => [
+                'id' => $report->category->id ?? null,
+                'name' => $report->category->name ?? null,
+            ]
+        ], 200);
     }
 
     public function searchReports(Request $request)
