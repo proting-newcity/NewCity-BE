@@ -10,6 +10,7 @@ use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\BeritaController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\KategoriController;
+use App\Http\Controllers\UserController;
 
 Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
     return $request->user();
@@ -72,3 +73,5 @@ Route::prefix('kategori')->group(function () {
     Route::post('/berita', [KategoriController::class, 'storeBerita']);
     
 });
+
+Route::get('/pemerintah', [UserController::class, 'index']);
