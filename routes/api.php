@@ -29,7 +29,7 @@ Route::prefix('report')->group(function () {
     Route::get('/', [ReportController::class, 'index']);
     
     // post
-    Route::post('/', [ReportController::class, 'store']);
+    Route::post('/', [ReportController::class, 'store'])->middleware('auth:sanctum');
     
     // search
     Route::get('/search', [ReportController::class, 'searchReports']);
@@ -44,10 +44,10 @@ Route::prefix('report')->group(function () {
     Route::get('/{id}', [ReportController::class, 'show']);
     
     // update
-    Route::put('/{id}', [ReportController::class, 'update']);
+    Route::put('/{id}', [ReportController::class, 'update'])->middleware('auth:sanctum');
     
     // delete
-    Route::delete('/{id}', [ReportController::class, 'destroy']);
+    Route::delete('/{id}', [ReportController::class, 'destroy'])->middleware('auth:sanctum');
 
 });
 
@@ -56,7 +56,7 @@ Route::prefix('berita')->group(function () {
     Route::get('/', [BeritaController::class, 'indexWeb']);
     
     // post berita
-    Route::post('/', [BeritaController::class, 'store']);
+    Route::post('/', [BeritaController::class, 'store'])->middleware('auth:sanctum');
 
     // like
     Route::post('/like', [BeritaController::class, 'like'])->middleware('auth:sanctum');
@@ -64,6 +64,11 @@ Route::prefix('berita')->group(function () {
     // get by category berita
     Route::get('/category/{categoryId}', [BeritaController::class, 'getByCategory']);
     
+    // update
+    Route::put('/{id}', [BeritaController::class, 'update'])->middleware('auth:sanctum');
+    
+    // delete
+    Route::delete('/{id}', [BeritaController::class, 'destroy'])->middleware('auth:sanctum');
 });
 
 Route::prefix('kategori')->group(function () {
@@ -74,12 +79,12 @@ Route::prefix('kategori')->group(function () {
     Route::get('/berita', [KategoriController::class, 'indexBerita']);
     
     // post kategori report
-    Route::post('/report', [KategoriController::class, 'storeReport']);
+    Route::post('/report', [KategoriController::class, 'storeReport'])->middleware('auth:sanctum');
 
     // post kategori berita
-    Route::post('/berita', [KategoriController::class, 'storeBerita']);
+    Route::post('/berita', [KategoriController::class, 'storeBerita'])->middleware('auth:sanctum');
     
 });
 
 // get all pemerintah users
-Route::get('/pemerintah', [UserController::class, 'index']);
+Route::get('/pemerintah', [UserController::class, 'index'])->middleware('auth:sanctum');

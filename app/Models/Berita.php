@@ -28,9 +28,9 @@ class Berita extends Model
     }
 
     // Relasi dengan model User (editor)
-    public function user()
+    public function admin()
     {
-        return $this->belongsTo(User::class, 'id_user');
+        return $this->belongsTo(Admin::class, 'id_user');
     }
 
     /**

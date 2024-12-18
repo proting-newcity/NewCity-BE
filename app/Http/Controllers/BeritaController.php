@@ -4,9 +4,10 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\Storage;
 
 use App\Models\Berita;
+use App\Models\User;
+use App\Models\Admin;
 
 class BeritaController extends Controller
 {
@@ -62,34 +63,88 @@ class BeritaController extends Controller
 
     public function store(Request $request)
     {
-        // Validate the request data
         $validator = Validator::make($request->all(), [
             'title' => 'required|string|max:50',
             'content' => 'required|string',
             'foto' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
             'status' => 'required|string|max:50',
             'id_kategori' => 'required|integer|exists:kategori_berita,id',
-            'id_user' => 'required|integer|exists:user,id',
         ]);
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
+        if (!$this->checkRole("masyarakat")) {
+                return response()->json(['error' => 'You are not authorized!'], 401);
+            }
+
         $foto = $request->file('foto');
         $fotoPath = str_replace('public/', 'storage/', $foto->store('public/berita'));
 
-        // Create a new berita
         $berita = Berita::create([
             'title' => $request->title,
             'content' => $request->content,
             'foto' => $fotoPath,
             'status' => $request->status,
             'id_kategori' => $request->id_kategori,
-            'id_user' => $request->id_user,
+            'id_user' => auth()->user()->id,
         ]);
 
         return response()->json($berita, 201);
+    }
+
+    public function update(Request $request, $id)
+    {
+        $validator = Validator::make($request->all(), [
+            'title' => 'nullable|string|max:100', 
+            'content' => 'nullable|string', 
+            'status' => 'required|string|max:50',
+            'id_kategori' => 'required|integer|exists:kategori_berita,id',
+        ]);
+    
+        $berita = Berita::find($id);
+        if (!$berita) {
+            return response()->json(['message' => 'Berita not found'], 404);
+        }
+    
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        }
+
+        if (!$this->checkOwner($berita->admin->id)) {
+            return response()->json(['message' => 'You are not authorized!'], 401);
+        }
+    
+        $berita->update($request->only([
+            'title', 'content', 'lokasi', 'status', 'id_kategori'
+        ]));
+    
+        if ($request->hasFile('foto')) {
+            $fotoPath = $request->file('foto')->store('public/berita');
+    
+            $berita->foto = $fotoPath;
+            $berita->save();
+        }
+    
+        return response()->json($berita, 200);
+    }
+
+    public function destroy($id)
+    {
+        $berita = Berita::find($id);
+
+        if (!$berita) {
+            return response()->json(['message' => 'Berita not found'], 404);
+        }
+        
+        if (!$this->checkOwner($berita->admin->id)) {
+            return response()->json(['message' => 'You are not authorized!'], 401);
+        }
+
+        $berita->delete();
+
+        return response()->json(['message' => 'Berita deleted successfully'], 200);
     }
 
     /**

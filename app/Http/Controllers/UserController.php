@@ -10,6 +10,10 @@ class UserController extends Controller
 {
     public function index(Request $request)
     {
+        if(!$this->checkRole("admin")){
+            return response()->json(['error' => 'You are not authorized!'], 401);
+        }
+        
         $pemerintah = Pemerintah::paginate(10);
 
         foreach ($pemerintah as $pemerintahData) {

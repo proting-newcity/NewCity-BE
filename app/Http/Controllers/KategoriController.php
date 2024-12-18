@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\Storage;
 
 use App\Models\KategoriBerita;
 use App\Models\KategoriReport;
@@ -31,14 +30,18 @@ class KategoriController extends Controller
      */
     public function storeReport(Request $request)
     {
-        // Validate the request data
+        
         $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:50', // Ensuring 'name' is required
+            'name' => 'required|string|max:50',
         ]);
 
-        // If validation fails, return the errors with status 422
+        
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
+        }
+        
+        if(!$this->checkRole("admin")){
+            return response()->json(['error' => 'You are not authorized!'], 401);
         }
 
         $kategori_report = KategoriReport::create([
@@ -53,9 +56,13 @@ class KategoriController extends Controller
             'name' => 'required|string|max:100',
             'foto' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
-        
+
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
+        }
+        
+        if(!$this->checkRole("admin")){
+            return response()->json(['error' => 'You are not authorized!'], 401);
         }
 
         $foto = $request->file('foto');
