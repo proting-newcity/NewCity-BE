@@ -6,7 +6,6 @@ use App\Models\Report;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 
 class ReportController extends Controller
 {
@@ -177,5 +176,18 @@ class ReportController extends Controller
         $report->delete();
 
         return response()->json(['message' => 'Report deleted successfully'], 200);
+    }
+
+    /**
+     * Summary of like
+     * @param \Illuminate\Http\Request $request
+     * @return mixed|\Illuminate\Http\JsonResponse
+     */
+    public function like(Request $request)
+    {
+        $report = Report::find($request->id);
+        $response = auth()->user()->toggleLikeReport($report->id);
+
+        return response()->json(['success' => $response]);
     }
 }

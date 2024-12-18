@@ -47,4 +47,68 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    // Relation to RatingReport
+    public function likesReport()
+    {
+        return $this->hasMany(RatingReport::class, 'id_user','id');
+    }
+
+     // Check Like by report id
+    public function hasLikedReport($id_report)
+    {
+        return $this->likesReport()->where('id_report', $id_report)->exists();
+    }
+
+    // Toggle Like Report
+    public function toggleLikeReport($id_report){
+        $existingLike = $this->likesReport()->where('id_report', $id_report)->first();
+        if ($existingLike) {
+            $existingLike->where('id_report', $id_report)->delete();
+
+            return [
+                'hasLikedReport' => false,
+            ];
+        } else {
+            $this->likesReport()->create([
+                'id_report' => $id_report,
+            ]);
+        }
+
+        return [
+            'hasLikedReport' => $this->hasLikedReport($id_report)
+        ];
+    }
+
+    // Relation to RatingBerita
+    public function likesBerita()
+    {
+        return $this->hasMany(RatingBerita::class, 'id_user','id');
+    }
+
+    // Check Like by Berita id
+    public function hasLikedBerita($id_berita)
+    {
+        return $this->likesBerita()->where('id_berita', $id_berita)->exists();
+    }
+
+    // Toggle Like Berita
+    public function toggleLikeBerita($id_berita){
+        $existingLike = $this->likesBerita()->where('id_berita', $id_berita)->first();
+        if ($existingLike) {
+            $existingLike->where('id_berita', $id_berita)->delete();
+
+            return [
+                'toggleLikeBerita' => false
+            ];
+        } else {
+            $this->likesBerita()->create([
+                'id_berita' => $id_berita,
+            ]);
+        }
+
+        return [
+            'hasLikedBerita' => $this->hasLikedBerita($id_berita)
+        ];
+    }
 }

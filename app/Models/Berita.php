@@ -32,4 +32,12 @@ class Berita extends Model
     {
         return $this->belongsTo(User::class, 'id_user');
     }
+
+    /**
+     * Get the RatingBerita handling the berira.
+     */
+    public function likes()
+    {
+        return $this->hasMany(RatingBerita::class);
+    }
 }

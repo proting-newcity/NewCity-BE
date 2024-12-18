@@ -92,4 +92,16 @@ class BeritaController extends Controller
         return response()->json($berita, 201);
     }
 
+    /**
+     * Summary of like
+     * @param \Illuminate\Http\Request $request
+     * @return mixed|\Illuminate\Http\JsonResponse
+     */
+    public function like(Request $request)
+    {
+        $berita = berita::find($request->id);
+        $response = auth()->user()->toggleLikeBerita($berita->id);
+
+        return response()->json(['success' => $response]);
+    }
 }

@@ -17,20 +17,19 @@ class AuthenticatedSessionController extends Controller
      * Handle an incoming authentication request.
      */
     public function store(LoginRequest $request)
-    {
+{
+    try {
         $request->validate([
             'username' => ['required', 'string'],
             'password' => ['required', 'string'],
-            'role' => ['required', 'string', 'in:masyarakat,pemerintah,admin'],  // validasi role
+            'role' => ['required', 'string', 'in:masyarakat,pemerintah,admin'],  // validate role
             'always_signed_in' => ['required', 'boolean'],
         ]);
 
-        // cek credentials
         if (!Auth::attempt($request->only('username', 'password'))) {
             return response()->json(['message' => 'Invalid login credentials'], 401);
         }
 
-        // ambil user
         $user = Auth::user();
 
         $userRole = null;
@@ -43,17 +42,12 @@ class AuthenticatedSessionController extends Controller
             $userRole = 'admin';
         }
 
-        // cek role sesuai
         if ($userRole !== $request->role) {
             Auth::logout();
             return response()->json(['message' => 'Unauthorized: Role mismatch'], 403);
-        } else{
-            // buat session
-            $lifetime = $request->always_signed_in ? 120 : 10080; // set exp (itungan menit)
-            $request->session()->regenerate();
         }
 
-        if ($userRole == 'masyarakat' && $userRole == 'pemerintah'){
+        if ($userRole == 'masyarakat' || $userRole == 'pemerintah') {
             $token = $user->createToken('auth_token')->plainTextToken;
             return response()->json([
                 'message' => 'Login success',
@@ -63,7 +57,16 @@ class AuthenticatedSessionController extends Controller
         }
 
         return response()->noContent();
+    } catch (\Exception $e) {
+        \Log::error('Error during login', ['exception' => $e]);
+        return response()->json([
+            'message' => 'An error occurred while processing your request.',
+            'error' => $e->getMessage()
+        ], 500);
     }
+}
+
+
 
     /**
      * Logout and invalidate the token.

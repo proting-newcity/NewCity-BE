@@ -34,6 +34,9 @@ Route::prefix('report')->group(function () {
     // search
     Route::get('/search', [ReportController::class, 'searchReports']);
     
+    // like
+    Route::post('/like', [ReportController::class, 'like'])->middleware('auth:sanctum');
+    
     // get by category
     Route::get('/category/{categoryId}', [ReportController::class, 'getByCategory']);
     
@@ -45,6 +48,7 @@ Route::prefix('report')->group(function () {
     
     // delete
     Route::delete('/{id}', [ReportController::class, 'destroy']);
+
 });
 
 Route::prefix('berita')->group(function () {
@@ -53,6 +57,9 @@ Route::prefix('berita')->group(function () {
     
     // post berita
     Route::post('/', [BeritaController::class, 'store']);
+
+    // like
+    Route::post('/like', [BeritaController::class, 'like'])->middleware('auth:sanctum');
     
     // get by category berita
     Route::get('/category/{categoryId}', [BeritaController::class, 'getByCategory']);
@@ -74,4 +81,5 @@ Route::prefix('kategori')->group(function () {
     
 });
 
+// get all pemerintah users
 Route::get('/pemerintah', [UserController::class, 'index']);

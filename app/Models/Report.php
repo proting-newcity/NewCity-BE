@@ -64,4 +64,12 @@ class Report extends Model
     {
         return $this->belongsTo(Pemerintah::class, 'id_pemerintah');
     }
+
+    /**
+     * Get the RatingReport handling the report.
+     */
+    public function likes()
+    {
+        return $this->hasMany(RatingReport::class);
+    }
 }
