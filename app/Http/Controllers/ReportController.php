@@ -94,6 +94,28 @@ class ReportController extends Controller
             return response()->json(['message' => 'Report not found'], 404);
         }
 
+        if(auth()->user() != null){
+            $like = $this->like();
+            $bookmark = $this->bookmark();
+
+            return response()->json([
+                'report' => $report,
+                'masyarakat' => [
+                    'id' => $report->masyarakat->id,
+                    'name' => $report->masyarakat->user->name,
+                ],
+                'pemerintah' => [
+                    'id' => $report->pemerintah->id ?? null,
+                    'name' => $report->pemerintah->user->name ?? null,
+                ],
+                'kategori' => [
+                    'id' => $report->category->id ?? null,
+                    'name' => $report->category->name ?? null,
+                ],
+                'like' => $like
+            ], 200);
+        }
+
         return response()->json([
             'report' => $report,
             'masyarakat' => [
@@ -207,8 +229,33 @@ class ReportController extends Controller
     public function like(Request $request)
     {
         $report = Report::find($request->id);
-        $response = auth()->user()->toggleLikeReport($report->id);
+        $response = auth()->user()->toggleLikeReport($report->id, $request->loaded);
 
         return response()->json(['success' => $response]);
     }
+
+    public function bookmark(Request $request)
+    {
+        $report = Report::find($request->id);
+        $response = auth()->user()->toggleBookmark($report->id, $request->loaded);
+
+        return response()->json(['success' => $response]);
+    }
+
+    public function diskusi(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'content' => 'required|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        }
+
+        $report = Report::find($request->id);
+        $response = auth()->user()->sendDiskusi($report->id, $request->content);
+
+        return response()->json(['success' => $response]);
+    }
+
 }

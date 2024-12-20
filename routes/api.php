@@ -13,7 +13,10 @@ use App\Http\Controllers\KategoriController;
 use App\Http\Controllers\UserController;
 
 Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
-    return $request->user();
+    $user = $request->user(); 
+    $user->getRoles(); 
+    
+    return response()->json($user);
 });
 
 route::get('/users',function(){
@@ -36,6 +39,9 @@ Route::prefix('report')->group(function () {
     
     // like
     Route::post('/like', [ReportController::class, 'like'])->middleware('auth:sanctum');
+
+    // bookmark
+    Route::post('/bookmark', [ReportController::class, 'bookmark'])->middleware('auth:sanctum');
     
     // get by category
     Route::get('/category/{categoryId}', [ReportController::class, 'getByCategory']);

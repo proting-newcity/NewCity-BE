@@ -72,4 +72,9 @@ class Report extends Model
     {
         return $this->hasMany(RatingReport::class);
     }
+
+    public function diskusi()
+    {
+        return $this->hasMany(Diskusi::class);
+    }
 }

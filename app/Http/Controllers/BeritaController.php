@@ -155,7 +155,7 @@ class BeritaController extends Controller
     public function like(Request $request)
     {
         $berita = berita::find($request->id);
-        $response = auth()->user()->toggleLikeBerita($berita->id);
+        $response = auth()->user()->toggleLikeBerita($berita->id, $request->loaded);
 
         return response()->json(['success' => $response]);
     }
