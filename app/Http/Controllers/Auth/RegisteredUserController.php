@@ -30,17 +30,25 @@ class RegisteredUserController extends Controller
                 'username' => ['required', 'string', 'max:255', 'unique:user'],
                 'password' => ['required', 'confirmed', Rules\Password::defaults()],
                 'role' => ['nullable', 'string', 'in:masyarakat,pemerintah'],
-                'institusi_id' => ['nullable', 'exists:institusi,id', 
-                'required_if:role,pemerintah'], // required kalau role pemerintah
+                'institusi_id' => [
+                    'nullable',
+                    'exists:institusi,id',
+                    'required_if:role,pemerintah'
+                ], // required kalau role pemerintah
+                'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif',
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json(['errors' => $e->errors()], 422);
         }
 
+        $foto = $request->file('foto');
+        $fotoPath = str_replace('public/', 'storage/', $foto->store('public/users'));
+
         $user = User::create([
             'name' => $request->name,
             'username' => $request->username,
             'password' => Hash::make($request->password),
+            'foto' => $fotoPath,
         ]);
 
         if ($request->role) {
@@ -55,8 +63,8 @@ class RegisteredUserController extends Controller
                 case 'pemerintah':
                     Pemerintah::create([
                         'id' => $user->id,
-                        'status' => true, 
-                        'phone' => $request->username, 
+                        'status' => true,
+                        'phone' => $request->username,
                         'institusi_id' => $request->institusi_id,
                     ]);
                     break;

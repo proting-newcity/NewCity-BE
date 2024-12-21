@@ -23,6 +23,7 @@ class User extends Authenticatable
         'name',
         'username',
         'password',
+        'foto',
     ];
 
     /**
@@ -96,31 +97,19 @@ class User extends Authenticatable
     }
 
     // Toggle Like Report
-    public function toggleLikeReport($id_report, $loaded)
+    public function toggleLikeReport($id_report,$loaded)
     {
-        if ($loaded) {
-            $count = RatingReport::all()->where('id_report', $id_report);
-            return [
-                'count' => count($count),
-                'hasLikedReport' => $this->hasLikedReport($id_report),
-            ];
+        if ($loaded){
+            return
+                $this->hasLikedReport($id_report);
         }
 
         $existingLike = $this->likesReport()->where('id_report', $id_report)->first();
         if ($existingLike) {
-            if ($loaded) {
-                $count = RatingReport::all()->where('id_report', $id_report);
-                return [
-                    'count' => count($count),
-                    'hasLikedReport' => true,
-                ];
-            }
 
             $existingLike->where('id_report', $id_report)->delete();
-            $count = RatingReport::all()->where('id_report', $id_report);
 
             return [
-                'count' => count($count),
                 'hasLikedReport' => false,
             ];
         } else {
@@ -128,10 +117,8 @@ class User extends Authenticatable
                 'id_report' => $id_report,
             ]);
         }
-        $count = RatingReport::all()->where('id_report', $id_report);
 
         return [
-            'count' => count($count),
             'hasLikedReport' => $this->hasLikedReport($id_report)
         ];
     }
@@ -149,31 +136,19 @@ class User extends Authenticatable
     }
 
     // Toggle Like Berita
-    public function toggleLikeBerita($id_berita,$loaded)
+    public function toggleLikeBerita($id_berita, $loaded)
     {
-        if ($loaded) {
-            $count = RatingBerita::all()->where('id_berita', $id_berita);
-            return [
-                'count' => count($count),
-                'hasLikedBerita' => $this->hasLikedBerita($id_berita),
-            ];
+        if ($loaded){
+            return
+                $this->hasLikedBerita($id_berita);
         }
 
         $existingLike = $this->likesBerita()->where('id_berita', $id_berita)->first();
         if ($existingLike) {
-            if ($loaded) {
-                $count = RatingBerita::all()->where('id_berita', $id_berita);
-                return [
-                    'count' => count($count),
-                    'hasLikedBerita' => true,
-                ];
-            }
 
             $existingLike->where('id_berita', $id_berita)->delete();
-            $count = RatingBerita::all()->where('id_berita', $id_berita);
 
             return [
-                'count' => count($count),
                 'hasLikedBerita' => false
             ];
         } else {
@@ -181,10 +156,7 @@ class User extends Authenticatable
                 'id_berita' => $id_berita,
             ]);
         }
-
-        $count = RatingBerita::all()->where('id_berita', $id_berita);
         return [
-            'count' => count($count),
             'hasLikedBerita' => $this->hasLikedBerita($id_berita)
         ];
     }
@@ -204,7 +176,7 @@ class User extends Authenticatable
     // create disscusion
     public function sendDiskusi($id_report, $content)
     {
-        $this->diskusi()->create([
+        return $this->diskusi()->create([
             'id_report' => $id_report,
             'content' => $content
         ]);
@@ -225,27 +197,15 @@ class User extends Authenticatable
     // toggle bookmark
     public function toggleBookmark($id_report, $loaded)
     {
-        if ($loaded) {
-            $count = Bookmark::all()->where('id_report', $id_report);
-            return [
-                'count' => count($count),
-                'hasBookmark' => $this->hasBookmark($id_report),
-            ];
+        if ($loaded){
+            return
+                $this->hasBookmark($id_report);
         }
-        
+
         $existingBookmark = $this->bookmark()->where('id_report', $id_report)->first();
         if ($existingBookmark) {
-            if ($loaded) {
-                $count = Bookmark::all()->where('id_report', $id_report);
-                return [
-                    'count' => count($count),
-                    'hasBookmark' => true,
-                ];
-            }
             $existingBookmark->where('id_report', $id_report)->delete();
-            $count = Bookmark::all()->where('id_report', $id_report);
             return [
-                'count' => count($count),
                 'hasBookmark' => false,
             ];
         } else {
@@ -254,9 +214,7 @@ class User extends Authenticatable
             ]);
         }
 
-        $count = Bookmark::all()->where('id_report', $id_report);
         return [
-            'count' => count($count),
             'hasBookmark' => $this->hasBookmark($id_report)
         ];
     }

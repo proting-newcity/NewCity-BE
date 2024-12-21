@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\RatingReport;
 use App\Models\User;
 use App\Models\Masyarakat;
 use App\Models\Report;
@@ -94,29 +95,7 @@ class ReportController extends Controller
             return response()->json(['message' => 'Report not found'], 404);
         }
 
-        if(auth()->user() != null){
-            $like = $this->like();
-            $bookmark = $this->bookmark();
-
-            return response()->json([
-                'report' => $report,
-                'masyarakat' => [
-                    'id' => $report->masyarakat->id,
-                    'name' => $report->masyarakat->user->name,
-                ],
-                'pemerintah' => [
-                    'id' => $report->pemerintah->id ?? null,
-                    'name' => $report->pemerintah->user->name ?? null,
-                ],
-                'kategori' => [
-                    'id' => $report->category->id ?? null,
-                    'name' => $report->category->name ?? null,
-                ],
-                'like' => $like
-            ], 200);
-        }
-
-        return response()->json([
+        $responseData = [
             'report' => $report,
             'masyarakat' => [
                 'id' => $report->masyarakat->id,
@@ -129,8 +108,18 @@ class ReportController extends Controller
             'kategori' => [
                 'id' => $report->category->id ?? null,
                 'name' => $report->category->name ?? null,
-            ]
-        ], 200);
+            ],
+            'like' => RatingReport::where('id_report', $report->id)->count(),
+        ];
+
+        if (auth('sanctum')->check()) {
+            $responseData['hasLiked'] = auth('sanctum')->user()->toggleLikeReport($report->id, true);
+            $responseData['hasBookmark'] = auth('sanctum')->user()->toggleBookmark($report->id, true);
+        } else {
+            $responseData['hasLiked']= false;
+        }
+    
+        return response()->json($responseData, 200);
     }
 
     public function searchReports(Request $request)
@@ -229,7 +218,7 @@ class ReportController extends Controller
     public function like(Request $request)
     {
         $report = Report::find($request->id);
-        $response = auth()->user()->toggleLikeReport($report->id, $request->loaded);
+        $response = auth()->user()->toggleLikeReport($report->id, false);
 
         return response()->json(['success' => $response]);
     }
@@ -237,7 +226,7 @@ class ReportController extends Controller
     public function bookmark(Request $request)
     {
         $report = Report::find($request->id);
-        $response = auth()->user()->toggleBookmark($report->id, $request->loaded);
+        $response = auth()->user()->toggleBookmark($report->id, false);
 
         return response()->json(['success' => $response]);
     }

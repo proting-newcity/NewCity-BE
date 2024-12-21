@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('pemerintah', function (Blueprint $table) {
             $table->integer('id')->index('pemerintah_user');
             $table->boolean('status');
-            $table->integer('phone');
+            $table->string('phone');
             $table->integer('institusi_id')->index('institusi_fk');
         });
     }
