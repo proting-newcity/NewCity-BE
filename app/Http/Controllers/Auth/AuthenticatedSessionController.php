@@ -47,16 +47,16 @@ class AuthenticatedSessionController extends Controller
             return response()->json(['message' => 'Unauthorized: Role mismatch'], 403);
         }
 
-        if ($userRole == 'masyarakat' || $userRole == 'pemerintah') {
-            $token = $user->createToken('auth_token')->plainTextToken;
-            return response()->json([
-                'message' => 'Login success',
-                'access_token' => $token,
-                'token_type' => 'Bearer'
-            ]);
+        if ($userRole == 'masyarakat' || $userRole == 'pemerintah' || $userRole == 'admin') {
         }
-
-        return response()->noContent();
+        $token = $user->createToken('auth_token')->plainTextToken;
+        return response()->json([
+            'message' => 'Login success',
+            'access_token' => $token,
+            'token_type' => 'Bearer'
+        ]);
+        
+        // return response()->noContent();
     } catch (\Exception $e) {
         \Log::error('Error during login', ['exception' => $e]);
         return response()->json([
