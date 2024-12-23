@@ -62,7 +62,7 @@ class UserController extends Controller
     public function updatePemerintah(Request $request, $id)
     {
         $validator = Validator::make($request->all(), [
-            'name' => ['required', 'string', 'max:255'],
+            'name' => ['nullable', 'string', 'max:255'],
             'username' => ['nullable', 'string', 'max:255', 'unique:user,username,' . $id],
             'phone' => ['nullable', 'string', 'max:255'],
             'password' => ['nullable', Rules\Password::defaults()],

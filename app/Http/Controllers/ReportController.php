@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\RatingReport;
+use App\Models\Diskusi;
 use App\Models\Report;
 
 use Illuminate\Http\Request;
@@ -233,9 +234,10 @@ class ReportController extends Controller
         return response()->json(['success' => $response]);
     }
 
-    public function diskusi(Request $request)
+    public function diskusiStore(Request $request)
     {
         $validator = Validator::make($request->all(), [
+            'id' => ['required', 'exists:report,id'],
             'content' => 'required|string',
         ]);
 
@@ -247,6 +249,26 @@ class ReportController extends Controller
         $response = auth()->user()->sendDiskusi($report->id, $request->content);
 
         return response()->json(['success' => $response]);
+    }
+
+    public function diskusiShow(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'id' => ['required', 'exists:report,id'],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        }
+
+        $report = Report::find($request->id);
+        $diskusi =  Diskusi::where('id_report', $report->id)->get();
+        foreach ($diskusi as $data) {
+            $data->user;
+        }
+        $responseData =$diskusi;
+
+        return response()->json($responseData, 200);
     }
 
 }

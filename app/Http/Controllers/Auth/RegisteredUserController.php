@@ -8,11 +8,9 @@ use App\Models\Masyarakat;
 use App\Models\Pemerintah;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
-use Illuminate\Support\Facades\Log;
 
 class RegisteredUserController extends Controller
 {
@@ -39,10 +37,11 @@ class RegisteredUserController extends Controller
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json(['errors' => $e->errors()], 422);
-        }
+        };
 
-        $foto = $request->file('foto');
-        $fotoPath = str_replace('public/', 'storage/', $foto->store('public/users'));
+        if ($request->hasFile('foto') && $request->file('foto')->isValid()) {
+            $fotoPath= $this->uploadImage($request->file('foto'), 'public/users');
+        };
 
         $user = User::create([
             'name' => $request->name,
