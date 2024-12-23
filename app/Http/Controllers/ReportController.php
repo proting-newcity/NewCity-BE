@@ -3,8 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\RatingReport;
-use App\Models\User;
-use App\Models\Masyarakat;
 use App\Models\Report;
 
 use Illuminate\Http\Request;
@@ -46,8 +44,7 @@ class ReportController extends Controller
                 return response()->json(['error' => 'You are not authorized!'], 401);
             }
 
-            $foto = $request->file('foto');
-            $fotoPath = str_replace('public/', 'storage/', $foto->store('public/reports'));
+            $fotoPath = $this->uploadImage($request->file('foto'), 'public/reports');
 
             $report = Report::create([
                 'judul' => $request->judul,
@@ -116,9 +113,9 @@ class ReportController extends Controller
             $responseData['hasLiked'] = auth('sanctum')->user()->toggleLikeReport($report->id, true);
             $responseData['hasBookmark'] = auth('sanctum')->user()->toggleBookmark($report->id, true);
         } else {
-            $responseData['hasLiked']= false;
+            $responseData['hasLiked'] = false;
         }
-    
+
         return response()->json($responseData, 200);
     }
 
@@ -179,11 +176,12 @@ class ReportController extends Controller
         ]));
 
         if ($request->hasFile('foto')) {
-            $fotoPath = $request->file('foto')->store('public/reports');
-
-            $report->foto = $fotoPath;
-            $report->save();
+            if($report->foto){
+                $this->deleteImage($report->foto);
+            }
+            $report->foto = $this->uploadImage($request->file('foto'), 'public/report');
         }
+        $report->save();
 
         return response()->json($report, 200);
     }
@@ -203,6 +201,10 @@ class ReportController extends Controller
 
         if (!$this->checkOwner($report->masyarakat->id)) {
             return response()->json(['message' => 'You are not authorized!'], 401);
+        }
+
+        if($report->foto){
+            $this->deleteImage($report->foto);
         }
 
         $report->delete();

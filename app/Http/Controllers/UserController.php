@@ -7,6 +7,7 @@ use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
+use Illuminate\Support\Facades\Storage;
 
 use App\Models\Pemerintah;
 use App\Models\user;
@@ -84,9 +85,11 @@ class UserController extends Controller
     
         // Handle file upload for foto (if provided)
         if ($request->hasFile('foto')) {
-            $foto = $request->file('foto');
-            $fotoPath = str_replace('public/', 'storage/', $foto->store('public/users'));
-            $user->foto = $fotoPath;
+            if ($user->foto) {
+                $this->deleteImage($user->foto);
+            }
+            
+            $user->foto = $this->uploadImage($request->file('foto'), 'public/users');
         }
     
         // Handle text fields for User (name, username, password)
@@ -172,6 +175,9 @@ class UserController extends Controller
 
         $user = $pemerintah->user;
         if ($user) {
+            if ($user->foto) {
+                $this->deleteImage($user->foto);
+            }
             $pemerintah->delete();
             $user->delete();
         }

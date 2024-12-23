@@ -7,8 +7,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
 use App\Models\Berita;
-use App\Models\User;
-use App\Models\Admin;
 
 class BeritaController extends Controller
 {
@@ -103,8 +101,7 @@ class BeritaController extends Controller
             return response()->json(['error' => 'You are not authorized!'], 401);
         }
 
-        $foto = $request->file('foto');
-        $fotoPath = str_replace('public/', 'storage/', $foto->store('public/berita'));
+        $fotoPath = $this->uploadImage($request->file('foto'), 'public/berita');
 
         $berita = Berita::create([
             'title' => $request->title,
@@ -149,11 +146,13 @@ class BeritaController extends Controller
         ]));
 
         if ($request->hasFile('foto')) {
-            $fotoPath = $request->file('foto')->store('public/berita');
+            if ($berita->foto) {
+                $this->deleteImage($berita->foto);
+            }
 
-            $berita->foto = $fotoPath;
-            $berita->save();
+            $berita->foto = $this->uploadImage($request->file('foto'), 'public/berita');;
         }
+        $berita->save();
 
         return response()->json($berita, 200);
     }
@@ -168,6 +167,10 @@ class BeritaController extends Controller
 
         if (!$this->checkOwner($berita->admin->id)) {
             return response()->json(['message' => 'You are not authorized!'], 401);
+        }
+
+        if($berita->foto){
+            $this->deleteImage($berita->foto);
         }
 
         $berita->delete();
