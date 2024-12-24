@@ -82,6 +82,20 @@ class ReportController extends Controller
         return response()->json($reports, 200);
     }
 
+    /**
+     * Get all reports by status.
+     */
+    public function getReportsByStatus($status)
+    {
+        $reports = Report::where('status', 'like', "%$status%")->paginate(10);
+
+        if ($reports->isEmpty()) {
+            return response()->json(['message' => 'No reports found for this status'], 404);
+        }
+
+        // Return hasil query dalam bentuk JSON
+        return response()->json($reports, 200);
+    }
 
     /**
      * Display the specified report.

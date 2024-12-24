@@ -53,6 +53,9 @@ Route::prefix('report')->group(function () {
     // get by category
     Route::get('/category/{categoryId}', [ReportController::class, 'getByCategory']);
 
+    // get by status
+    Route::get('/status/{status}', [ReportController::class, 'getReportsByStatus']);
+
     // Get by id
     Route::get('/{id}', [ReportController::class, 'show']);
 
