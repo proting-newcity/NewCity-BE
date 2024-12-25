@@ -56,6 +56,9 @@ Route::prefix('report')->group(function () {
     // get by status
     Route::get('/status/{status}', [ReportController::class, 'getReportsByStatus']);
 
+    // update status
+    Route::post('/status/{id}', [ReportController::class, 'addStatus']);
+
     // Get by id
     Route::get('/{id}', [ReportController::class, 'show']);
 

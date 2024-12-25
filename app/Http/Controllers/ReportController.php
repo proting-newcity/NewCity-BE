@@ -87,14 +87,74 @@ class ReportController extends Controller
      */
     public function getReportsByStatus($status)
     {
-        $reports = Report::where('status', 'like', "%$status%")->paginate(10);
+        // Ambil semua laporan
+        $reports = Report::all();
 
-        if ($reports->isEmpty()) {
+        // Filter laporan berdasarkan status terakhir
+        $filteredReports = $reports->filter(function ($report) use ($status) {
+            $statuses = $report->status; // Langsung akses array
+            if (is_array($statuses) && !empty($statuses)) {
+                $lastStatus = end($statuses); // Ambil status terakhir
+                return isset($lastStatus['status']) && $lastStatus['status'] == $status;
+            }
+            return false;
+        });
+
+        // Jika tidak ada laporan yang cocok, kembalikan pesan error
+        if ($filteredReports->isEmpty()) {
             return response()->json(['message' => 'No reports found for this status'], 404);
         }
 
-        // Return hasil query dalam bentuk JSON
-        return response()->json($reports, 200);
+        // Ubah hasil menjadi array tanpa key indeks
+        $filteredReports = array_values($filteredReports->toArray());
+
+        // Kembalikan laporan yang difilter
+        return response()->json(['data' => $filteredReports], 200);
+    }
+
+
+    /**
+     * Update status.
+     */
+    public function addStatus(Request $request, $id)
+    {
+        // Validasi input
+        $validated = $request->validate([
+            'status' => 'required|string',
+        ]);
+
+        // Ambil laporan berdasarkan ID
+        $report = Report::find($id);
+        if (!$report) {
+            return response()->json(['error' => 'Report not found'], 404);
+        }
+
+        // Hardcode mapping status -> deskripsi
+        $statusToDescription = [
+            'Dalam Proses' => 'Laporan sedang ditangani oleh ' . $report->pemerintah->institusi->name ?? '' . '.',
+            'Tindak Lanjut' => 'Laporan telah diproses oleh ' . $report->pemerintah->institusi->name ?? '' . '.',
+            'Selesai' => 'Laporan sudah diselesaikan oleh ' . $report->pemerintah->institusi->name ?? '' . '.',
+        ];
+
+        // Ambil deskripsi berdasarkan status
+        $deskripsi = $statusToDescription[$validated['status']] ?? 'Status tidak diketahui';
+
+        // Tambahkan status baru
+        $newStatus = [
+            'status' => $validated['status'],
+            'deskripsi' => $deskripsi,
+            'tanggal' => now()->toISOString(),
+        ];
+
+        // Tambahkan status ke field "status" (assume it's stored as JSON)
+        $status = $report->status; // Mengambil field JSON
+        $status[] = $newStatus;    // Menambahkan data baru
+        $report->status = $status; // Update field JSON
+
+        // Simpan laporan
+        $report->save();
+
+        return response()->json($report, 200);
     }
 
     /**
@@ -191,7 +251,7 @@ class ReportController extends Controller
         ]));
 
         if ($request->hasFile('foto')) {
-            if($report->foto){
+            if ($report->foto) {
                 $this->deleteImage($report->foto);
             }
             $report->foto = $this->uploadImage($request->file('foto'), 'public/report');
@@ -218,7 +278,7 @@ class ReportController extends Controller
             return response()->json(['message' => 'You are not authorized!'], 401);
         }
 
-        if($report->foto){
+        if ($report->foto) {
             $this->deleteImage($report->foto);
         }
 
@@ -276,11 +336,11 @@ class ReportController extends Controller
         }
 
         $report = Report::find($request->id);
-        $diskusi =  Diskusi::where('id_report', $report->id)->get();
+        $diskusi = Diskusi::where('id_report', $report->id)->get();
         foreach ($diskusi as $data) {
             $data->user;
         }
-        $responseData =$diskusi;
+        $responseData = $diskusi;
 
         return response()->json($responseData, 200);
     }
