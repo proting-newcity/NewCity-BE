@@ -22,7 +22,6 @@ class AuthenticatedSessionController extends Controller
         $request->validate([
             'username' => ['required', 'string'],
             'password' => ['required', 'string'],
-            'role' => ['required', 'string', 'in:masyarakat,pemerintah,admin'],  // validate role
             'always_signed_in' => ['required', 'boolean'],
         ]);
 
@@ -32,8 +31,6 @@ class AuthenticatedSessionController extends Controller
 
         $user = Auth::user();
 
-        $userRole = null;
-
         if (Masyarakat::where('id', $user->id)->exists()) {
             $userRole = 'masyarakat';
         } elseif (Pemerintah::where('id', $user->id)->exists()) {
@@ -42,18 +39,12 @@ class AuthenticatedSessionController extends Controller
             $userRole = 'admin';
         }
 
-        if ($userRole !== $request->role) {
-            Auth::logout();
-            return response()->json(['message' => 'Unauthorized: Role mismatch'], 403);
-        }
-
-        if ($userRole == 'masyarakat' || $userRole == 'pemerintah' || $userRole == 'admin') {
-        }
         $token = $user->createToken('auth_token')->plainTextToken;
         return response()->json([
             'message' => 'Login success',
             'access_token' => $token,
-            'token_type' => 'Bearer'
+            'token_type' => 'Bearer',
+            'role' => $userRole,
         ]);
         
         // return response()->noContent();

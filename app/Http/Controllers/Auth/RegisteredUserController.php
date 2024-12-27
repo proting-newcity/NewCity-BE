@@ -47,7 +47,7 @@ class RegisteredUserController extends Controller
             'name' => $request->name,
             'username' => $request->username,
             'password' => Hash::make($request->password),
-            'foto' => $fotoPath,
+            
         ]);
 
         if ($request->role) {

@@ -97,7 +97,7 @@ class BeritaController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        if (!$this->checkRole("masyarakat")) {
+        if (!$this->checkRole("admin")) {
             return response()->json(['error' => 'You are not authorized!'], 401);
         }
 
@@ -163,10 +163,6 @@ class BeritaController extends Controller
 
         if (!$berita) {
             return response()->json(['message' => 'Berita not found'], 404);
-        }
-
-        if (!$this->checkOwner($berita->admin->id)) {
-            return response()->json(['message' => 'You are not authorized!'], 401);
         }
 
         if($berita->foto){
