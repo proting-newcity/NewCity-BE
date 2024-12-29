@@ -32,6 +32,9 @@ Route::prefix('report')->group(function () {
     // get all
     Route::get('/', [ReportController::class, 'index']);
 
+    // get all reports with 'null', 'Menunggu', 'Ditolak'
+    Route::get('/admin', [ReportController::class, 'indexAdmin']);
+
     // post
     Route::post('/', [ReportController::class, 'store'])->middleware('auth:sanctum');
 
@@ -58,6 +61,9 @@ Route::prefix('report')->group(function () {
 
     // update status
     Route::post('/status/{id}', [ReportController::class, 'addStatus']);
+
+    // update status
+    Route::post('/status/admin/{id}', [ReportController::class, 'changeStatus']);
 
     // Get by id
     Route::get('/{id}', [ReportController::class, 'show']);
