@@ -31,7 +31,6 @@ class ReportController extends Controller
                 'judul' => 'required|string|max:100',
                 'deskripsi' => 'required|string',
                 'lokasi' => 'required|string',
-                'status' => 'required|array',
                 'foto' => 'required|image|mimes:jpeg,png,jpg,gif',
                 'id_pemerintah' => 'nullable|exists:pemerintah,id',
                 'id_kategori' => 'required|exists:kategori_report,id',
@@ -47,11 +46,17 @@ class ReportController extends Controller
 
             $fotoPath = $this->uploadImage($request->file('foto'), 'public/reports');
 
+            $status = [
+                'status' => 'Menunggu',
+                'deskripsi' => 'Laporan sedang diverifikasi oleh Admin',
+                'tanggal' => now()->toISOString(),
+            ];
+
             $report = Report::create([
                 'judul' => $request->judul,
                 'deskripsi' => $request->deskripsi,
                 'lokasi' => $request->lokasi,
-                'status' => $request->status,
+                'status' => $status,
                 'foto' => $fotoPath,
                 'id_masyarakat' => auth()->user()->id,
                 'id_pemerintah' => $request->id_pemerintah,
@@ -182,6 +187,7 @@ class ReportController extends Controller
                 'name' => $report->category->name ?? null,
             ],
             'like' => RatingReport::where('id_report', $report->id)->count(),
+            'comment' => Diskusi::where('id_report', $report->id)->count(),
         ];
 
         if (auth('sanctum')->check()) {
@@ -308,10 +314,9 @@ class ReportController extends Controller
         return response()->json(['success' => $response]);
     }
 
-    public function diskusiStore(Request $request)
+    public function diskusiStore(Request $request, $id)
     {
         $validator = Validator::make($request->all(), [
-            'id' => ['required', 'exists:report,id'],
             'content' => 'required|string',
         ]);
 
@@ -319,23 +324,16 @@ class ReportController extends Controller
             return response()->json($validator->errors(), 422);
         }
 
-        $report = Report::find($request->id);
+        $report = Report::find($id);
         $response = auth()->user()->sendDiskusi($report->id, $request->content);
 
         return response()->json(['success' => $response]);
     }
 
-    public function diskusiShow(Request $request)
+    public function diskusiShow($id)
     {
-        $validator = Validator::make($request->all(), [
-            'id' => ['required', 'exists:report,id'],
-        ]);
 
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
-        }
-
-        $report = Report::find($request->id);
+        $report = Report::find($id);
         $diskusi = Diskusi::where('id_report', $report->id)->get();
         foreach ($diskusi as $data) {
             $data->user;

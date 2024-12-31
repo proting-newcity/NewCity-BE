@@ -45,10 +45,10 @@ Route::prefix('report')->group(function () {
     Route::post('/bookmark', [ReportController::class, 'bookmark'])->middleware('auth:sanctum');
 
     // post diskusi
-    Route::post('/diskusi', [ReportController::class, 'diskusiStore'])->middleware('auth:sanctum');
+    Route::post('/diskusi/{id}', [ReportController::class, 'diskusiStore'])->middleware('auth:sanctum');
 
     // get diskusi
-    Route::get('/diskusi', [ReportController::class, 'diskusiShow'])->middleware('auth:sanctum');
+    Route::get('/diskusi/{id}', [ReportController::class, 'diskusiShow'])->middleware('auth:sanctum');
 
     // get by category
     Route::get('/category/{categoryId}', [ReportController::class, 'getByCategory']);

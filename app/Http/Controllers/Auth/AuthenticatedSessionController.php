@@ -30,6 +30,8 @@ class AuthenticatedSessionController extends Controller
         }
 
         $user = Auth::user();
+        
+        $userRole = null;
 
         if (Masyarakat::where('id', $user->id)->exists()) {
             $userRole = 'masyarakat';

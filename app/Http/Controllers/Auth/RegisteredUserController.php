@@ -39,6 +39,8 @@ class RegisteredUserController extends Controller
             return response()->json(['errors' => $e->errors()], 422);
         };
 
+        $fotoPath = null;
+
         if ($request->hasFile('foto') && $request->file('foto')->isValid()) {
             $fotoPath= $this->uploadImage($request->file('foto'), 'public/users');
         };
@@ -47,7 +49,7 @@ class RegisteredUserController extends Controller
             'name' => $request->name,
             'username' => $request->username,
             'password' => Hash::make($request->password),
-            
+            'foto' => $fotoPath,            
         ]);
 
         if ($request->role) {
