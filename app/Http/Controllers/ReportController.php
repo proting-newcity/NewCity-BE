@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Pemerintah;
 use App\Models\RatingReport;
 use App\Models\Diskusi;
 use App\Models\Report;
@@ -19,6 +20,33 @@ class ReportController extends Controller
     {
         $reports = Report::paginate(10);
         return response()->json($reports, 200);
+    }
+
+    /**
+     * Display reports which status equal to null, 'Menunggu', 'Rejected'.
+     */
+    public function indexAdmin()
+    {
+        $reports = Report::all();
+
+        // Filter laporan berdasarkan status terakhir
+        $filteredReports = $reports->filter(function ($report) {
+            $statuses = $report->status; // Langsung akses array
+            if (is_array($statuses) && !empty($statuses)) {
+                $lastStatus = end($statuses); // Ambil status terakhir
+                return isset($lastStatus['status']) && $lastStatus['status'] == 'Menunggu' || $lastStatus['status'] == '' || $lastStatus['status'] == 'Ditolak';
+            }
+            return false;
+        });
+        // Jika tidak ada laporan yang cocok, kembalikan pesan error
+        if ($filteredReports->isEmpty()) {
+            return response()->json(['message' => 'No reports found for this status'], 404);
+        }
+
+        // Ubah hasil menjadi array tanpa key indeks
+        $filteredReports = array_values($filteredReports->toArray());
+
+        return response()->json($filteredReports, 200);
     }
 
     /**
@@ -154,6 +182,54 @@ class ReportController extends Controller
         // Tambahkan status ke field "status" (assume it's stored as JSON)
         $status = $report->status; // Mengambil field JSON
         $status[] = $newStatus;    // Menambahkan data baru
+        $report->status = $status; // Update field JSON
+
+        // Simpan laporan
+        $report->save();
+
+        return response()->json($report, 200);
+    }
+
+    /**
+     * Update status.
+     */
+    public function changeStatus(Request $request, $id)
+    {
+        // Validasi input
+        $validated = $request->validate([
+            'status' => 'required|string',
+        ]);
+
+        // Ambil laporan berdasarkan ID
+        $report = Report::find($id);
+        if (!$report) {
+            return response()->json(['error' => 'Report not found'], 404);
+        }
+
+        $pemerintah = Pemerintah::inRandomOrder()->first();
+
+        $report->id_pemerintah = $pemerintah->id;
+        $report->save();
+
+        // Hardcode mapping status -> deskripsi
+        $statusToDescription = [
+            'Menunggu' => 'Laporan diterima oleh ' . $report->pemerintah->institusi->name ?? '' . '.',
+            'Ditolak' => 'Laporan tidak memenuhi syarat dan ketentuan yang berlaku.',
+        ];
+
+        // Ambil deskripsi berdasarkan status
+        $deskripsi = $statusToDescription[$validated['status']] ?? 'Status tidak diketahui';
+
+        // Tambahkan status baru
+        $newStatus = [
+            'status' => $validated['status'],
+            'deskripsi' => $deskripsi,
+            'tanggal' => now()->toISOString(),
+        ];
+
+        // Tambahkan status ke field "status" (assume it's stored as JSON)
+        $status = $report->status; // Mengambil field JSON
+        $status[0] = $newStatus;    // Menambahkan data baru
         $report->status = $status; // Update field JSON
 
         // Simpan laporan
