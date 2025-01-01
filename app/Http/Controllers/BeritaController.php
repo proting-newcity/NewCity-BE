@@ -177,11 +177,7 @@ class BeritaController extends Controller
     public function searchBerita(Request $request)
     {
 
-        $validated = $request->validate([
-            'search' => 'required|string|max:255',
-        ]);
-
-        $search = $validated['search'];
+        $search = $request->input('search');
 
         $reports = Berita::where('title', 'like', "%$search%")
             ->orWhere('content', 'like', "%$search%")

@@ -120,6 +120,9 @@ Route::prefix('pemerintah')->middleware('auth:sanctum')->group(function () {
     // store pemerintah user
     Route::post('/', [UserController::class, 'storePemerintah']);
 
+    //search
+    Route::get('/search', [UserController::class, 'searchPemerintah']);
+
     // show pemerintah by id
     Route::post('/{id}', [UserController::class, 'updatePemerintah']);
 

@@ -162,6 +162,39 @@ class UserController extends Controller
         );
     }
 
+    public function searchPemerintah(Request $request)
+{
+    $search = $request->input('search');
+
+    $pemerintah = Pemerintah::with(['user', 'institusi'])
+        ->when($search, function ($query) use ($search) {
+            $query->whereHas('user', function ($userQuery) use ($search) {
+                $userQuery->where('name', 'like', "%$search%")
+                    ->orWhere('username', 'like', "%$search%");
+            })->orWhere('phone', 'like', "%$search%")
+              ->orWhereHas('institusi', function ($institusiQuery) use ($search) {
+                  $institusiQuery->where('name', 'like', "%$search%");
+              });
+        })
+        ->paginate(10);
+
+    $pemerintah->getCollection()->transform(function ($item) {
+        return [
+            'id' => $item->id,
+            'status' => $item->status,
+            'phone' => $item->phone,
+            'institusi_id' => $item->institusi_id,
+            'username' => $item->user->username,
+            'name' => $item->user->name,
+            'institusiName' => $item->institusi->name ?? null,
+            'user' => $item->user,
+            'institusi' => $item->institusi,
+        ];
+    });
+
+    return response()->json($pemerintah);
+}
+
     public function destroyPemerintah($id)
     {
         if (!$this->checkRole("admin")) {

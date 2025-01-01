@@ -75,9 +75,11 @@ class ReportController extends Controller
             $fotoPath = $this->uploadImage($request->file('foto'), 'public/reports');
 
             $status = [
-                'status' => 'Menunggu',
-                'deskripsi' => 'Laporan sedang diverifikasi oleh Admin',
-                'tanggal' => now()->toISOString(),
+                [
+                    'status' => 'Menunggu',
+                    'deskripsi' => 'Laporan sedang diverifikasi oleh Admin',
+                    'tanggal' => now()->toISOString(),
+                ]
             ];
 
             $report = Report::create([
@@ -237,11 +239,7 @@ class ReportController extends Controller
 
     public function searchReports(Request $request)
     {
-        $validated = $request->validate([
-            'search' => 'required|string|max:255',
-        ]);
-
-        $search = $validated['search'];
+        $search = $request->input('search');
 
         $reports = Report::where('judul', 'like', "%$search%")
             ->orWhere('deskripsi', 'like', "%$search%")
