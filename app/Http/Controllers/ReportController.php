@@ -34,7 +34,7 @@ class ReportController extends Controller
             $statuses = $report->status; // Langsung akses array
             if (is_array($statuses) && !empty($statuses)) {
                 $lastStatus = end($statuses); // Ambil status terakhir
-                return isset($lastStatus['status']) && $lastStatus['status'] == 'Menunggu' || $lastStatus['status'] == '' || $lastStatus['status'] == 'Ditolak';
+                return isset($lastStatus['status']) && $lastStatus['status'] == 'Menunggu' || $lastStatus['status'] == 'Dalam Proses' || $lastStatus['status'] == 'Ditolak';
             }
             return false;
         });
@@ -162,58 +162,17 @@ class ReportController extends Controller
             return response()->json(['error' => 'Report not found'], 404);
         }
 
+        if ($report->id_pemerintah == null) {
+            $pemerintah = Pemerintah::inRandomOrder()->first();
+            $report->id_pemerintah = $pemerintah->id;
+            $report->save();
+        }
+
         // Hardcode mapping status -> deskripsi
         $statusToDescription = [
             'Dalam Proses' => 'Laporan sedang ditangani oleh ' . $report->pemerintah->institusi->name ?? '' . '.',
             'Tindak Lanjut' => 'Laporan telah diproses oleh ' . $report->pemerintah->institusi->name ?? '' . '.',
             'Selesai' => 'Laporan sudah diselesaikan oleh ' . $report->pemerintah->institusi->name ?? '' . '.',
-        ];
-
-        // Ambil deskripsi berdasarkan status
-        $deskripsi = $statusToDescription[$validated['status']] ?? 'Status tidak diketahui';
-
-        // Tambahkan status baru
-        $newStatus = [
-            'status' => $validated['status'],
-            'deskripsi' => $deskripsi,
-            'tanggal' => now()->toISOString(),
-        ];
-
-        // Tambahkan status ke field "status" (assume it's stored as JSON)
-        $status = $report->status; // Mengambil field JSON
-        $status[] = $newStatus;    // Menambahkan data baru
-        $report->status = $status; // Update field JSON
-
-        // Simpan laporan
-        $report->save();
-
-        return response()->json($report, 200);
-    }
-
-    /**
-     * Update status.
-     */
-    public function changeStatus(Request $request, $id)
-    {
-        // Validasi input
-        $validated = $request->validate([
-            'status' => 'required|string',
-        ]);
-
-        // Ambil laporan berdasarkan ID
-        $report = Report::find($id);
-        if (!$report) {
-            return response()->json(['error' => 'Report not found'], 404);
-        }
-
-        $pemerintah = Pemerintah::inRandomOrder()->first();
-
-        $report->id_pemerintah = $pemerintah->id;
-        $report->save();
-
-        // Hardcode mapping status -> deskripsi
-        $statusToDescription = [
-            'Menunggu' => 'Laporan diterima oleh ' . $report->pemerintah->institusi->name ?? '' . '.',
             'Ditolak' => 'Laporan tidak memenuhi syarat dan ketentuan yang berlaku.',
         ];
 
@@ -229,7 +188,7 @@ class ReportController extends Controller
 
         // Tambahkan status ke field "status" (assume it's stored as JSON)
         $status = $report->status; // Mengambil field JSON
-        $status[0] = $newStatus;    // Menambahkan data baru
+        $status[] = $newStatus;    // Menambahkan data baru
         $report->status = $status; // Update field JSON
 
         // Simpan laporan
