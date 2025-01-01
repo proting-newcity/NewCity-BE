@@ -174,6 +174,34 @@ class BeritaController extends Controller
         return response()->json(['message' => 'Berita deleted successfully'], 200);
     }
 
+    public function searchBerita(Request $request)
+    {
+
+        $validated = $request->validate([
+            'search' => 'required|string|max:255',
+        ]);
+
+        $search = $validated['search'];
+
+        $reports = Berita::where('title', 'like', "%$search%")
+            ->orWhere('content', 'like', "%$search%")
+            ->orWhere('status', 'like', "%$search%")->with([
+                'kategori' => function ($query) {
+                    $query->select('id', 'name', 'foto');
+                },
+                'user' => function ($query) {
+                    $query->select('id', 'name');
+                }
+            ])
+            ->paginate(10);
+
+        if ($reports->isEmpty()) {
+            return response()->json(['message' => 'No reports found'], 404);
+        }
+
+        return response()->json($reports, 200);
+    }
+
     /**
      * Summary of like
      * @param \Illuminate\Http\Request $request

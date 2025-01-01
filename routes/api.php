@@ -86,11 +86,15 @@ Route::prefix('berita')->group(function () {
     // get by category berita
     Route::get('/category/{categoryId}', [BeritaController::class, 'getByCategory']);
 
+    //search
+    Route::get('/search', [BeritaController::class, 'searchBerita']);
+
     // update
     Route::post('/{id}', [BeritaController::class, 'update'])->middleware('auth:sanctum');
 
     // delete
     Route::delete('/{id}', [BeritaController::class, 'destroy'])->middleware('auth:sanctum');
+
 });
 
 Route::prefix('kategori')->group(function () {
