@@ -27,6 +27,7 @@ route::get('/users', function () {
 Route::post('/register', [RegisteredUserController::class, 'store']);
 Route::post('/login', [AuthenticatedSessionController::class, 'store']);
 Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->middleware('auth:sanctum');
+Route::post('/reset-password', [UserController::class, 'ubahPassword']);
 
 Route::prefix('report')->group(function () {
     // get all
@@ -131,6 +132,10 @@ Route::prefix('pemerintah')->middleware('auth:sanctum')->group(function () {
 
     // delete pemerintah by id
     Route::delete('/{id}', [UserController::class, 'destroyPemerintah']);
+});
+
+Route::prefix('masyarakat')->group(function () {
+    Route::get('/search', [UserController::class, 'searchMasyarakatByPhone']);
 });
 
 Route::apiResource('institusi', InstitusiController::class);

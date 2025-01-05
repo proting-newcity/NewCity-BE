@@ -12,18 +12,18 @@ class BeritaController extends Controller
 {
     public function indexWeb(Request $request)
     {
-        // Get berita with related kategori and user (editor)
+        
         $berita = Berita::with([
             'kategori' => function ($query) {
-                $query->select('id', 'name', 'foto'); // Hanya ambil id dan name dari kategori
+                $query->select('id', 'name', 'foto'); 
             },
             'user' => function ($query) {
-                $query->select('id', 'name'); // Hanya ambil id dan name dari user (editor)
+                $query->select('id', 'name'); 
             }
         ])
             ->paginate(10); // 10 items per page
 
-        // get like count
+        
         $berita->getCollection()->transform(function ($item) {
             $item->like_count = RatingBerita::where('id_berita', $item->id)->count();
             if (auth('sanctum')->check()) {
@@ -39,16 +39,16 @@ class BeritaController extends Controller
 
     public function indexMobile(Request $request)
     {
-        // Get berita with related kategori and user (editor)
+        
         $berita = Berita::with([
             'kategori' => function ($query) {
-                $query->select('id', 'name', 'foto'); // Hanya ambil id dan name dari kategori
+                $query->select('id', 'name', 'foto'); 
             },
             'user' => function ($query) {
-                $query->select('id', 'name'); // Hanya ambil id dan name dari user (editor)
+                $query->select('id', 'name'); 
             },
         ])
-            ->paginate(7); // 10 items per page
+            ->paginate(7); // 7 items per page
 
         // get like count
         $berita->getCollection()->transform(function ($item) {

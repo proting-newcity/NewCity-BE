@@ -10,6 +10,7 @@ use Illuminate\Validation\Rules;
 use Illuminate\Support\Facades\Storage;
 
 use App\Models\Pemerintah;
+use App\Models\Masyarakat;
 use App\Models\user;
 
 class UserController extends Controller
@@ -218,4 +219,45 @@ class UserController extends Controller
 
         return response()->json(['message' => 'Pemerintah and associated user deleted successfully']);
     }
+     
+    public function searchMasyarakatByPhone(Request $request)
+    {
+        $search = $request->input('search');
+       $masyarakat = Masyarakat::where('phone',$search)->first();
+       if(!$masyarakat){
+           return response()->json(['message' => 'Masyarakat not found'], 404);
+       }
+       $user = User::where('id',$masyarakat->id)->first();
+       return response()->json($user);
+
+    
+    }
+
+    public function ubahPassword(Request $request)
+    {
+
+        $validator = Validator::make($request->all(), [
+            'new_password' => ['required', Rules\Password::defaults()],
+            'username' => ['required', 'string', 'max:255'],
+        ]);
+    
+        // Check if validation fails
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $user = User::where('username',$request->input('username'))->first();
+        
+        if (!$user) {
+            return response()->json(['message' => 'User not found'], 404);
+
+        }
+        
+        $user->password = Hash::make($request->input('new_password'));
+        $user->save();
+
+        return response()->json(['message' => 'Password updated successfully','user' => $user]);
+    }
+
+
 }
