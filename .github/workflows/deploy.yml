@@ -3,7 +3,8 @@ name: Deploy Laravel to Azure VM
 on:
   push:
     branches:
-      - main  # Change this if your main branch is different
+      - master
+  workflow_dispatch:
 
 jobs:
   deploy:
