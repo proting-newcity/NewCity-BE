@@ -18,7 +18,19 @@ class ReportController extends Controller
      */
     public function index()
     {
-        $reports = Report::paginate(10);
+        $reports = Report::with([
+            'masyarakat.user' => function ($query) {
+                $query->select('id', 'name'); // Ambil data yang diperlukan
+            }
+        ])->paginate(10);
+
+        // Transform hasil supaya hanya 'user_name' yang tampil
+        $reports->getCollection()->transform(function ($item) {
+            $item->pelapor = optional($item->masyarakat->user)->name;
+            unset($item->masyarakat); // Hapus objek masyarakat biar respons lebih rapi
+            return $item;
+        });
+
         return response()->json($reports, 200);
     }
 
@@ -170,13 +182,16 @@ class ReportController extends Controller
             $report->save();
         }
 
+        $institusiName = optional($report->pemerintah->institusi)->name ?? 'pemerintah terkait';
+
         // Hardcode mapping status -> deskripsi
         $statusToDescription = [
-            'Dalam Proses' => 'Laporan sedang ditangani oleh ' . $report->pemerintah->institusi->name ?? '' . '.',
-            'Tindak Lanjut' => 'Laporan telah diproses oleh ' . $report->pemerintah->institusi->name ?? '' . '.',
-            'Selesai' => 'Laporan sudah diselesaikan oleh ' . $report->pemerintah->institusi->name ?? '' . '.',
-            'Ditolak' => 'Laporan tidak memenuhi syarat dan ketentuan yang berlaku.',
+            'Dalam Proses' => "Laporan sedang ditangani oleh $institusiName.",
+            'Tindak Lanjut' => "Laporan telah diproses oleh $institusiName.",
+            'Selesai' => "Laporan sudah diselesaikan oleh $institusiName.",
+            'Ditolak' => "Laporan tidak memenuhi syarat dan ketentuan yang berlaku.",
         ];
+
 
         // Ambil deskripsi berdasarkan status
         $deskripsi = $statusToDescription[$validated['status']] ?? 'Status tidak diketahui';
