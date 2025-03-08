@@ -11,22 +11,21 @@ abstract class Controller
 {
     private const STORAGE_PATH = 'storage/';
     private const PUBLIC_PATH = 'public/';
-    public function checkRole(string $role)
-    {
-        $models = [
-            'masyarakat' => Masyarakat::class,
-            'pemerintah' => Pemerintah::class,
-            'admin' => Admin::class,
-        ];
-    
-        if (!isset($models[$role])) {
-            return false; // Role is not valid
-        }
-    
-        $user = $models[$role]::where('id', auth()->user()->id)->first();
-    
-        return $user instanceof $models[$role];
+    public function checkRole(string $role): bool
+{
+    $models = [
+        'masyarakat' => Masyarakat::class,
+        'pemerintah' => Pemerintah::class,
+        'admin' => Admin::class,
+    ];
+
+    if (!isset($models[$role])) {
+        return false;
     }
+
+    return $models[$role]::where('id', auth()->id())->exists();
+}
+
 
     public function checkOwner($id)
     {
