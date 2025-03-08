@@ -9,29 +9,23 @@ use App\Models\Pemerintah;
 
 abstract class Controller
 {
+    private const STORAGE_PATH = 'storage/';
+    private const PUBLIC_PATH = 'public/';
     public function checkRole(string $role)
     {
-
-        if ($role == "masyarakat") {
-            $masyarakat = Masyarakat::where('id', auth()->user()->id)->first();
-
-            if (!($masyarakat instanceof Masyarakat)) {
-                return false;
-            }
-        } else if ($role == "pemerintah") {
-            $pemerintah = Pemerintah::where('id', auth()->user()->id)->first();
-
-            if (!($pemerintah instanceof Pemerintah)) {
-                return false;
-            }
-        } else if ($role == "admin") {
-            $admin = Admin::where('id', auth()->user()->id)->first();
-
-            if (!($admin instanceof Admin)) {
-                return false;
-            }
+        $models = [
+            'masyarakat' => Masyarakat::class,
+            'pemerintah' => Pemerintah::class,
+            'admin' => Admin::class,
+        ];
+    
+        if (!isset($models[$role])) {
+            return false; // Role is not valid
         }
-        return true;
+    
+        $user = $models[$role]::where('id', auth()->user()->id)->first();
+    
+        return $user instanceof $models[$role];
     }
 
     public function checkOwner($id)
@@ -44,12 +38,12 @@ abstract class Controller
 
     public function uploadImage($file, $path){
         $foto = $file->store($path);
-        return str_replace('public/', 'storage/', $foto);
+        return str_replace(self::PUBLIC_PATH, self::STORAGE_PATH, $foto);
     }
 
     public function deleteImage($path){
-        if (Storage::exists(str_replace('storage/', 'public/', $path))){
-            Storage::delete(str_replace('storage/', 'public/', $path));
+        if (Storage::exists(str_replace(self::STORAGE_PATH, self::PUBLIC_PATH, $path))){
+            Storage::delete(str_replace(self::STORAGE_PATH, self::PUBLIC_PATH, $path));
         }
     }
 }

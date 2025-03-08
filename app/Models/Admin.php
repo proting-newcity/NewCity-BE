@@ -21,7 +21,7 @@ class Admin extends Model
     // Define the attributes that can be mass assigned
     protected $fillable = [
         'id',
-        'nip',  
+        'nip',
     ];
 
     // Define the relationship with the User model

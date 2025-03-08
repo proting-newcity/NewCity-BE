@@ -49,7 +49,6 @@ class AuthenticatedSessionController extends Controller
             'role' => $userRole,
         ]);
         
-        // return response()->noContent();
     } catch (\Exception $e) {
         \Log::error('Error during login', ['exception' => $e]);
         return response()->json([

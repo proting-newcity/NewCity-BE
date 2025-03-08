@@ -8,6 +8,7 @@ use Illuminate\Http\Response;
 
 class InstitusiController extends Controller
 {
+    private const INSTITUSI_NOT_FOUND = 'Institusi not found';
     // GET: api/institusi
     public function index()
     {
@@ -21,7 +22,7 @@ class InstitusiController extends Controller
         $institusi = Institusi::find($id);
 
         if (!$institusi) {
-            return response()->json(['message' => 'Institusi not found'], Response::HTTP_NOT_FOUND);
+            return response()->json(['message' => self::INSTITUSI_NOT_FOUND], Response::HTTP_NOT_FOUND);
         }
 
         return response()->json($institusi);
@@ -47,7 +48,7 @@ class InstitusiController extends Controller
         $institusi = Institusi::find($id);
 
         if (!$institusi) {
-            return response()->json(['message' => 'Institusi not found'], Response::HTTP_NOT_FOUND);
+            return response()->json(['message' => self::INSTITUSI_NOT_FOUND], Response::HTTP_NOT_FOUND);
         }
 
         // Validate the incoming request
@@ -71,7 +72,7 @@ class InstitusiController extends Controller
         $institusi = Institusi::find($id);
 
         if (!$institusi) {
-            return response()->json(['message' => 'Institusi not found'], Response::HTTP_NOT_FOUND);
+            return response()->json(['message' => self::INSTITUSI_NOT_FOUND], Response::HTTP_NOT_FOUND);
         }
 
         $institusi->delete();
