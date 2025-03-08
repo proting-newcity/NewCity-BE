@@ -21,9 +21,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-	if (request()->header('X-Forwarded-Proto') === 'https') {
+        if (request()->header('X-Forwarded-Proto') === 'https') {
             URL::forceScheme('https');
-    	}
+        }
         ResetPassword::createUrlUsing(function (object $notifiable, string $token) {
             return config('app.frontend_url')."/password-reset/$token?username={$notifiable->getUsernameForPasswordReset()}";
         });

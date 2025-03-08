@@ -13,6 +13,9 @@ use Illuminate\Support\Facades\Log;
 
 class ReportController extends Controller
 {
+    private const ERROR_REPORT_NOT_FOUND = 'Report not found';
+    private const ERROR_UNAUTHORIZED = 'You are not authorized!';
+    private const RULE_REQUIRED_STRING = 'required|string';
     /**
      * Display a listing of the reports.
      */
@@ -69,23 +72,23 @@ class ReportController extends Controller
         try {
             $validator = Validator::make($request->all(), [
                 'judul' => 'required|string|max:100',
-                'deskripsi' => 'required|string',
-                'lokasi' => 'required|string',
+                'deskripsi' => self::RULE_REQUIRED_STRING,
+                'lokasi' => self::RULE_REQUIRED_STRING,
                 'foto' => 'required|image|mimes:jpeg,png,jpg,gif',
                 'id_pemerintah' => 'nullable|exists:pemerintah,id',
                 'id_kategori' => 'required|exists:kategori_report,id',
             ]);
-
+    
             if ($validator->fails()) {
                 return response()->json($validator->errors(), 422);
             }
-
+    
             if (!$this->checkRole("masyarakat")) {
-                return response()->json(['error' => 'You are not authorized!'], 401);
+                return response()->json(['error' => self::ERROR_UNAUTHORIZED], 401);
             }
-
+    
             $fotoPath = $this->uploadImage($request->file('foto'), 'public/reports');
-
+    
             $status = [
                 [
                     'status' => 'Menunggu',
@@ -93,7 +96,7 @@ class ReportController extends Controller
                     'tanggal' => now()->toISOString(),
                 ]
             ];
-
+    
             $report = Report::create([
                 'judul' => $request->judul,
                 'deskripsi' => $request->deskripsi,
@@ -104,16 +107,19 @@ class ReportController extends Controller
                 'id_pemerintah' => $request->id_pemerintah,
                 'id_kategori' => $request->id_kategori,
             ]);
-
-            return response()->json($report, 201);
+    
+            $response = response()->json($report, 201);
         } catch (\Exception $e) {
             Log::error('Error creating report: ' . $e->getMessage());
-
-            return response()->json([
+    
+            $response = response()->json([
                 'error' => 'An error occurred while creating the report. Please try again later.'
             ], 500);
         }
+    
+        return $response;
     }
+    
 
     /**
      * Get all reports by category ID.
@@ -167,13 +173,13 @@ class ReportController extends Controller
     {
         // Validasi input
         $validated = $request->validate([
-            'status' => 'required|string',
+            'status' => self::RULE_REQUIRED_STRING,
         ]);
 
         // Ambil laporan berdasarkan ID
         $report = Report::find($id);
         if (!$report) {
-            return response()->json(['error' => 'Report not found'], 404);
+            return response()->json(['message' => self::ERROR_REPORT_NOT_FOUND], 404);
         }
 
         if ($report->id_pemerintah == null) {
@@ -221,7 +227,7 @@ class ReportController extends Controller
     {
         $report = Report::find($id);
         if (!$report) {
-            return response()->json(['message' => 'Report not found'], 404);
+            return response()->json(['message' => self::ERROR_REPORT_NOT_FOUND], 404);
         }
 
         $responseData = [
@@ -280,40 +286,34 @@ class ReportController extends Controller
             'id_pemerintah' => 'nullable|exists:pemerintah,id',
             'id_kategori' => 'nullable|exists:kategori_report,id',
         ]);
-
+    
         $report = Report::find($id);
+    
         if (!$report) {
-            return response()->json(['message' => 'Report not found'], 404);
-        }
-
-
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
-        }
-
-        if (!$this->checkOwner($report->masyarakat->id)) {
-            return response()->json(['message' => 'You are not authorized!'], 401);
-        }
-
-        $report->update($request->only([
-            'judul',
-            'deskripsi',
-            'lokasi',
-            'status',
-            'id_pemerintah',
-            'id_kategori'
-        ]));
-
-        if ($request->hasFile('foto')) {
-            if ($report->foto) {
-                $this->deleteImage($report->foto);
+            $response = response()->json(['message' => self::ERROR_REPORT_NOT_FOUND], 404);
+        } elseif ($validator->fails()) {
+            $response = response()->json($validator->errors(), 422);
+        } elseif (!$this->checkOwner($report->masyarakat->id)) {
+            $response = response()->json(['message' => self::ERROR_UNAUTHORIZED], 401);
+        } else {
+            $report->update($request->only([
+                'judul', 'deskripsi', 'lokasi', 'status', 'id_pemerintah', 'id_kategori'
+            ]));
+    
+            if ($request->hasFile('foto')) {
+                if ($report->foto) {
+                    $this->deleteImage($report->foto);
+                }
+                $report->foto = $this->uploadImage($request->file('foto'), 'public/report');
             }
-            $report->foto = $this->uploadImage($request->file('foto'), 'public/report');
+    
+            $report->save();
+            $response = response()->json($report, 200);
         }
-        $report->save();
-
-        return response()->json($report, 200);
+    
+        return $response;
     }
+    
 
 
 
@@ -325,11 +325,11 @@ class ReportController extends Controller
         $report = Report::find($id);
 
         if (!$report) {
-            return response()->json(['message' => 'Report not found'], 404);
+            return response()->json(['message' => self::ERROR_REPORT_NOT_FOUND], 404);
         }
 
         if (!$this->checkOwner($report->masyarakat->id)) {
-            return response()->json(['message' => 'You are not authorized!'], 401);
+            return response()->json(['message' => self::ERROR_UNAUTHORIZED], 401);
         }
 
         if ($report->foto) {
@@ -365,7 +365,7 @@ class ReportController extends Controller
     public function diskusiStore(Request $request, $id)
     {
         $validator = Validator::make($request->all(), [
-            'content' => 'required|string',
+            'content' => self::RULE_REQUIRED_STRING,
         ]);
 
         if ($validator->fails()) {

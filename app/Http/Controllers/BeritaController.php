@@ -10,15 +10,15 @@ use App\Models\Berita;
 
 class BeritaController extends Controller
 {
+    private const STRING_MAX_50 = 'required|string|max:50';
     public function indexWeb(Request $request)
-    {
-        
+    {   
         $berita = Berita::with([
             'kategori' => function ($query) {
-                $query->select('id', 'name', 'foto'); 
+                $query->select('id', 'name', 'foto');
             },
             'user' => function ($query) {
-                $query->select('id', 'name'); 
+                $query->select('id', 'name');
             }
         ])
             ->paginate(10); // 10 items per page
@@ -42,10 +42,10 @@ class BeritaController extends Controller
         
         $berita = Berita::with([
             'kategori' => function ($query) {
-                $query->select('id', 'name', 'foto'); 
+                $query->select('id', 'name', 'foto');
             },
             'user' => function ($query) {
-                $query->select('id', 'name'); 
+                $query->select('id', 'name');
             },
         ])
             ->paginate(7); // 7 items per page
@@ -86,10 +86,10 @@ class BeritaController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'title' => 'required|string|max:50',
+            'title' => self::STRING_MAX_50,,
             'content' => 'required|string',
             'foto' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'status' => 'required|string|max:50',
+            'status' => self::STRING_MAX_50,,
             'id_kategori' => 'required|integer|exists:kategori_berita,id',
         ]);
 
@@ -120,42 +120,41 @@ class BeritaController extends Controller
         $validator = Validator::make($request->all(), [
             'title' => 'nullable|string|max:100',
             'content' => 'nullable|string',
-            'status' => 'required|string|max:50',
+            'status' => self::STRING_MAX_50,
             'id_kategori' => 'required|integer|exists:kategori_berita,id',
         ]);
-
-        $berita = Berita::find($id);
-        if (!$berita) {
-            return response()->json(['message' => 'Berita not found'], 404);
-        }
-
+    
+        // Validation error handling
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
         }
-
-        if (!$this->checkOwner($berita->admin->id)) {
-            return response()->json(['message' => 'You are not authorized!'], 401);
+    
+        $berita = Berita::find($id);
+    
+        $errors = [];
+        if (!$berita) {
+            $errors[] = ['message' => 'Berita not found'];
+        } elseif (!$this->checkOwner($berita->admin->id)) {
+            $errors[] = ['message' => 'You are not authorized!'];
         }
-
-        $berita->update($request->only([
-            'title',
-            'content',
-            'lokasi',
-            'status',
-            'id_kategori'
-        ]));
-
+    
+        if (!empty($errors)) {
+            return response()->json($errors, empty($berita) ? 404 : 401);
+        }
+    
+        $berita->update($request->only(['title', 'content', 'lokasi', 'status', 'id_kategori']));
+    
         if ($request->hasFile('foto')) {
             if ($berita->foto) {
                 $this->deleteImage($berita->foto);
             }
-
-            $berita->foto = $this->uploadImage($request->file('foto'), 'public/berita');;
+            $berita->foto = $this->uploadImage($request->file('foto'), 'public/berita');
         }
+    
         $berita->save();
-
         return response()->json($berita, 200);
     }
+    
 
     public function destroy($id)
     {
@@ -205,7 +204,7 @@ class BeritaController extends Controller
      */
     public function like(Request $request)
     {
-        $berita = berita::find($request->id);
+        $berita = Berita::find($request->id);
         $response = auth()->user()->toggleLikeBerita($berita->id, false);
 
         return response()->json(['success' => $response]);
