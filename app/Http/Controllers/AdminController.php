@@ -7,13 +7,12 @@
     use Illuminate\Support\Facades\Validator;
     use Illuminate\Support\Facades\Hash;
     use Illuminate\Validation\Rules;
-    use Illuminate\Support\Facades\Storage;
 
     use App\Models\Pemerintah;
     use App\Models\Masyarakat;
     use App\Models\user;
 
-    class UserController extends Controller
+    class AdminController extends Controller
     {
         private const ERROR_UNAUTHORIZED = 'You are not authorized!';
         private const RULE_REQUIRED_STRING = 'required|string';

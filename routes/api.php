@@ -10,7 +10,8 @@ use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\BeritaController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\KategoriController;
-use App\Http\Controllers\UserController;
+use App\Http\Controllers\AdminController;
+use App\Http\Controllers\MasyarakatController;
 use App\Http\Controllers\InstitusiController;
 
 Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
@@ -27,7 +28,8 @@ route::get('/users', function () {
 Route::post('/register', [RegisteredUserController::class, 'store']);
 Route::post('/login', [AuthenticatedSessionController::class, 'store']);
 Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->middleware('auth:sanctum');
-Route::post('/reset-password', [UserController::class, 'ubahPassword']);
+Route::post('/reset-password', [AdminController::class, 'ubahPassword']);
+Route::get('/notification', [MasyarakatController::class, 'notification'])->middleware('auth:sanctum');
 
 Route::prefix('report')->group(function () {
     // get all
@@ -116,26 +118,26 @@ Route::prefix('kategori')->group(function () {
 Route::prefix('pemerintah')->middleware('auth:sanctum')->group(function () {
 
     // get all pemerintah users
-    Route::get('/', [UserController::class, 'indexPemerintah']);
+    Route::get('/', [AdminController::class, 'indexPemerintah']);
 
     // store pemerintah user
-    Route::post('/', [UserController::class, 'storePemerintah']);
+    Route::post('/', [AdminController::class, 'storePemerintah']);
 
     //search
-    Route::get('/search', [UserController::class, 'searchPemerintah']);
+    Route::get('/search', [AdminController::class, 'searchPemerintah']);
 
     // show pemerintah by id
-    Route::post('/{id}', [UserController::class, 'updatePemerintah']);
+    Route::post('/{id}', [AdminController::class, 'updatePemerintah']);
 
     // show pemerintah by id
-    Route::get('/{id}', [UserController::class, 'showPemerintah']);
+    Route::get('/{id}', [AdminController::class, 'showPemerintah']);
 
     // delete pemerintah by id
-    Route::delete('/{id}', [UserController::class, 'destroyPemerintah']);
+    Route::delete('/{id}', [AdminController::class, 'destroyPemerintah']);
 });
 
 Route::prefix('masyarakat')->group(function () {
-    Route::get('/search', [UserController::class, 'searchMasyarakatByPhone']);
+    Route::get('/search', [AdminController::class, 'searchMasyarakatByPhone']);
 });
 
 Route::apiResource('institusi', InstitusiController::class);

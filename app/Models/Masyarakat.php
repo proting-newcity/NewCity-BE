@@ -31,4 +31,42 @@ class Masyarakat extends Model
     {
         return $this->belongsTo(User::class, 'id');
     }
+
+    /**
+     * Get reports created by this masyarakat.
+     */
+    public function reports()
+    {
+        return $this->hasMany(Report::class, 'id_masyarakat');
+    }
+
+    /**
+     * Get all likes (ratings) associated with the reports created by this masyarakat.
+     */
+    public function likes()
+    {
+        return $this->hasManyThrough(
+            RatingReport::class,
+            Report::class,
+            'id_masyarakat',
+            'id_report',
+            'id',
+            'id'
+        );
+    }
+
+    /**
+     * Get all discussions associated with the reports created by this masyarakat.
+     */
+    public function diskusi()
+    {
+        return $this->hasManyThrough(
+            Diskusi::class,
+            Report::class,
+            'id_masyarakat',
+            'id_report',
+            'id',
+            'id'
+        );
+    }
 }
