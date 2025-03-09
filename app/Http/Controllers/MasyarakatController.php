@@ -27,7 +27,7 @@ class MasyarakatController extends Controller
                 'content' => $item->content,
                 'foto' => $item->report->foto ?? null,
                 'tanggal' => $item->tanggal,
-                'report_url' => url('/api/report/' . $item->id_report),
+                'id_report' => $item->id_report,
             ];
         });
     
@@ -39,7 +39,7 @@ class MasyarakatController extends Controller
                 'content' => 'Liked a report',
                 'foto' => $item->report->foto ?? null,
                 'tanggal' => $item->tanggal,
-                'report_url' => url('/api/report/' . $item->id_report),
+                'id_report' => $item->id_report,
             ];
         });
     
