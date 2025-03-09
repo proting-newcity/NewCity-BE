@@ -78,17 +78,17 @@ class ReportController extends Controller
                 'id_pemerintah' => 'nullable|exists:pemerintah,id',
                 'id_kategori' => 'required|exists:kategori_report,id',
             ]);
-    
+
             if ($validator->fails()) {
                 return response()->json($validator->errors(), 422);
             }
-    
+
             if (!$this->checkRole("masyarakat")) {
                 return response()->json(['error' => self::ERROR_UNAUTHORIZED], 401);
             }
-    
+
             $fotoPath = $this->uploadImage($request->file('foto'), 'public/reports');
-    
+
             $status = [
                 [
                     'status' => 'Menunggu',
@@ -96,7 +96,7 @@ class ReportController extends Controller
                     'tanggal' => now()->toISOString(),
                 ]
             ];
-    
+
             $report = Report::create([
                 'judul' => $request->judul,
                 'deskripsi' => $request->deskripsi,
@@ -107,19 +107,19 @@ class ReportController extends Controller
                 'id_pemerintah' => $request->id_pemerintah,
                 'id_kategori' => $request->id_kategori,
             ]);
-    
+
             $response = response()->json($report, 201);
         } catch (\Exception $e) {
             Log::error('Error creating report: ' . $e->getMessage());
-    
+
             $response = response()->json([
                 'error' => 'An error occurred while creating the report. Please try again later.'
             ], 500);
         }
-    
+
         return $response;
     }
-    
+
 
     /**
      * Get all reports by category ID.
@@ -286,9 +286,9 @@ class ReportController extends Controller
             'id_pemerintah' => 'nullable|exists:pemerintah,id',
             'id_kategori' => 'nullable|exists:kategori_report,id',
         ]);
-    
+
         $report = Report::find($id);
-    
+
         if (!$report) {
             $response = response()->json(['message' => self::ERROR_REPORT_NOT_FOUND], 404);
         } elseif ($validator->fails()) {
@@ -297,23 +297,28 @@ class ReportController extends Controller
             $response = response()->json(['message' => self::ERROR_UNAUTHORIZED], 401);
         } else {
             $report->update($request->only([
-                'judul', 'deskripsi', 'lokasi', 'status', 'id_pemerintah', 'id_kategori'
+                'judul',
+                'deskripsi',
+                'lokasi',
+                'status',
+                'id_pemerintah',
+                'id_kategori'
             ]));
-    
+
             if ($request->hasFile('foto')) {
                 if ($report->foto) {
                     $this->deleteImage($report->foto);
                 }
                 $report->foto = $this->uploadImage($request->file('foto'), 'public/report');
             }
-    
+
             $report->save();
             $response = response()->json($report, 200);
         }
-    
+
         return $response;
     }
-    
+
 
 
 
@@ -390,5 +395,16 @@ class ReportController extends Controller
 
         return response()->json($responseData, 200);
     }
+    public function likedReports()
+    {
+        $user = auth('sanctum')->user(); // Ambil user yang sedang login
 
+        // Ambil semua id_report yang di-like oleh user
+        $likedReportIds = RatingReport::where('id_user', $user->id)->pluck('id_report');
+
+        // Ambil semua report berdasarkan ID yang di-like
+        $likedReports = Report::whereIn('id', $likedReportIds)->paginate(10);
+
+        return response()->json($likedReports, 200);
+    }
 }

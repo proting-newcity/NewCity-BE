@@ -12,7 +12,7 @@ class BeritaController extends Controller
 {
     private const STRING_MAX_50 = 'required|string|max:50';
     public function indexWeb(Request $request)
-    {   
+    {
         $berita = Berita::with([
             'kategori' => function ($query) {
                 $query->select('id', 'name', 'foto');
@@ -23,12 +23,12 @@ class BeritaController extends Controller
         ])
             ->paginate(10); // 10 items per page
 
-        
+
         $berita->getCollection()->transform(function ($item) {
             $item->like_count = RatingBerita::where('id_berita', $item->id)->count();
             if (auth('sanctum')->check()) {
                 $item->hasLiked = auth('sanctum')->user()->toggleLikeBerita($item->id, true);
-            } else{
+            } else {
                 $item->hasLiked = false;
             }
             return $item;
@@ -39,7 +39,7 @@ class BeritaController extends Controller
 
     public function indexMobile(Request $request)
     {
-        
+
         $berita = Berita::with([
             'kategori' => function ($query) {
                 $query->select('id', 'name', 'foto');
@@ -86,10 +86,10 @@ class BeritaController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'title' => self::STRING_MAX_50,,
+            'title' => self::STRING_MAX_50,
             'content' => 'required|string',
             'foto' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'status' => self::STRING_MAX_50,,
+            'status' => self::STRING_MAX_50,
             'id_kategori' => 'required|integer|exists:kategori_berita,id',
         ]);
 
@@ -123,38 +123,38 @@ class BeritaController extends Controller
             'status' => self::STRING_MAX_50,
             'id_kategori' => 'required|integer|exists:kategori_berita,id',
         ]);
-    
+
         // Validation error handling
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
         }
-    
+
         $berita = Berita::find($id);
-    
+
         $errors = [];
         if (!$berita) {
             $errors[] = ['message' => 'Berita not found'];
         } elseif (!$this->checkOwner($berita->admin->id)) {
             $errors[] = ['message' => 'You are not authorized!'];
         }
-    
+
         if (!empty($errors)) {
             return response()->json($errors, empty($berita) ? 404 : 401);
         }
-    
+
         $berita->update($request->only(['title', 'content', 'lokasi', 'status', 'id_kategori']));
-    
+
         if ($request->hasFile('foto')) {
             if ($berita->foto) {
                 $this->deleteImage($berita->foto);
             }
             $berita->foto = $this->uploadImage($request->file('foto'), 'public/berita');
         }
-    
+
         $berita->save();
         return response()->json($berita, 200);
     }
-    
+
 
     public function destroy($id)
     {
@@ -164,7 +164,7 @@ class BeritaController extends Controller
             return response()->json(['message' => 'Berita not found'], 404);
         }
 
-        if($berita->foto){
+        if ($berita->foto) {
             $this->deleteImage($berita->foto);
         }
 
@@ -181,13 +181,13 @@ class BeritaController extends Controller
         $reports = Berita::where('title', 'like', "%$search%")
             ->orWhere('content', 'like', "%$search%")
             ->orWhere('status', 'like', "%$search%")->with([
-                'kategori' => function ($query) {
-                    $query->select('id', 'name', 'foto');
-                },
-                'user' => function ($query) {
-                    $query->select('id', 'name');
-                }
-            ])
+                    'kategori' => function ($query) {
+                        $query->select('id', 'name', 'foto');
+                    },
+                    'user' => function ($query) {
+                        $query->select('id', 'name');
+                    }
+                ])
             ->paginate(10);
 
         if ($reports->isEmpty()) {

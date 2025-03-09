@@ -65,6 +65,9 @@ Route::prefix('report')->group(function () {
     // update status
     Route::post('/status/{id}', [ReportController::class, 'addStatus']);
 
+    // get liked reports
+    Route::get('/liked', [ReportController::class, 'likedReports'])->middleware('auth:sanctum');
+
     // Get by id
     Route::get('/{id}', [ReportController::class, 'show']);
 
