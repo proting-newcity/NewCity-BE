@@ -7,8 +7,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 
 
 class MasyarakatController extends Controller
-{
-    public function notification(Request $request)
+{public function notification(Request $request)
     {
         $user = auth()->user();
     
@@ -17,34 +16,31 @@ class MasyarakatController extends Controller
         }
     
         $masyarakat = $user->masyarakat;
-    
-        // Fetch diskusi and likes
-        $diskusi = $masyarakat->diskusi()->get()->map(function ($item) {
+        $diskusi = $masyarakat->diskusi ? $masyarakat->diskusi()->get()->map(function ($item) {
             return [
-                'foto_profile' => $item->user->foto,
-                'name' => $item->user->name,
+                'foto_profile' => $item->user->foto ?? null,
+                'name' => $item->user->name ?? 'Unknown User',
                 'type' => 'diskusi',
                 'content' => $item->content,
                 'foto' => $item->report->foto ?? null,
                 'tanggal' => $item->tanggal,
                 'id_report' => $item->id_report,
             ];
-        });
-    
-        $likes = $masyarakat->likes()->get()->map(function ($item) {
+        }) : collect();
+        
+        $likes = $masyarakat->likes ? $masyarakat->likes()->get()->map(function ($item) {
             return [
-                'foto_profile' => $item->user->foto,
-                'name' => $item->user->name,
+                'foto_profile' => $item->user->foto ?? null,
+                'name' => $item->user->name ?? 'Unknown User',
                 'type' => 'like',
                 'content' => 'Liked a report',
                 'foto' => $item->report->foto ?? null,
                 'tanggal' => $item->tanggal,
                 'id_report' => $item->id_report,
             ];
-        });
-    
-        $combined = $diskusi->merge($likes)->sortByDesc('tanggal')->values();
+        }) : collect();
 
+        $combined = $diskusi->merge($likes)->sortByDesc('tanggal')->values();
         $perPage = 10;
         $page = $request->input('page', 1);
         $total = $combined->count();
@@ -58,6 +54,4 @@ class MasyarakatController extends Controller
     
         return response()->json($paginated);
     }
-    
-
 }
