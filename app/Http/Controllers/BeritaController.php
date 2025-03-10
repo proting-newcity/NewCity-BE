@@ -101,7 +101,7 @@ class BeritaController extends Controller
             return response()->json(['error' => 'You are not authorized!'], 401);
         }
 
-        $fotoPath = $this->uploadImage($request->file('foto'), 'public/berita');
+        $fotoPath = $this->uploadImage($request->file('foto'), 'berita');
 
         $berita = Berita::create([
             'title' => $request->title,
@@ -148,7 +148,7 @@ class BeritaController extends Controller
             if ($berita->foto) {
                 $this->deleteImage($berita->foto);
             }
-            $berita->foto = $this->uploadImage($request->file('foto'), 'public/berita');
+            $berita->foto = $this->uploadImage($request->file('foto'), 'berita');
         }
 
         $berita->save();

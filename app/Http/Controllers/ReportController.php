@@ -87,7 +87,7 @@ class ReportController extends Controller
                 return response()->json(['error' => self::ERROR_UNAUTHORIZED], 401);
             }
 
-            $fotoPath = $this->uploadImage($request->file('foto'), 'public/reports');
+            $fotoPath = $this->uploadImage($request->file('foto'), 'reports');
 
             $status = [
                 [
@@ -309,7 +309,7 @@ class ReportController extends Controller
                 if ($report->foto) {
                     $this->deleteImage($report->foto);
                 }
-                $report->foto = $this->uploadImage($request->file('foto'), 'public/report');
+                $report->foto = $this->uploadImage($request->file('foto'), 'reports');
             }
 
             $report->save();

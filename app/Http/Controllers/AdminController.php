@@ -35,8 +35,7 @@
                 return response()->json(['errors' => $e->errors()], 422);
             }
 
-            $foto = $request->file('foto');
-            $fotoPath = str_replace('public/', 'storage/', $foto->store('public/users'));
+            $fotoPath = $this->uploadImage($request->file('foto'), 'users');
 
             $user = User::create([
                 'name' => $request->name,
@@ -87,7 +86,7 @@
                     $this->deleteImage($user->foto);
                 }
                 
-                $user->foto = $this->uploadImage($request->file('foto'), 'public/users');
+                $user->foto = $this->uploadImage($request->file('foto'), 'users');
             }
         
             // Handle text fields for User (name, username, password)
