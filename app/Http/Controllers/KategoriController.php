@@ -64,9 +64,8 @@ class KategoriController extends Controller
         if(!$this->checkRole("admin")){
             return response()->json(['error' => 'You are not authorized!'], 401);
         }
-
-        $foto = $request->file('foto');
-        $fotoPath = str_replace('public/', 'storage/', $foto->store('public/kategoriberita'));
+        
+        $fotoPath = $this->uploadImage($request->file('foto'), 'kategori/berita');
 
         $kategori_berita = KategoriBerita::create([
             'name' => $request->name,

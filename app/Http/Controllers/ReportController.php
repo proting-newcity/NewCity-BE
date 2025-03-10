@@ -21,19 +21,14 @@ class ReportController extends Controller
      */
     public function index()
     {
-        $reports = Report::with([
-            'masyarakat.user' => function ($query) {
-                $query->select('id', 'name'); // Ambil data yang diperlukan
-            }
-        ])->paginate(10);
-
-        // Transform hasil supaya hanya 'user_name' yang tampil
-        $reports->getCollection()->transform(function ($item) {
-            $item->pelapor = optional($item->masyarakat->user)->name;
-            unset($item->masyarakat); // Hapus objek masyarakat biar respons lebih rapi
-            return $item;
+        $reports = Report::with('masyarakat.user:id,name')->paginate(10);
+        
+        $reports->transform(function ($report) {
+            $report->pelapor = optional($report->masyarakat->user)->name;
+            unset($report->masyarakat);
+            return $report;
         });
-
+        
         return response()->json($reports, 200);
     }
 
@@ -69,70 +64,40 @@ class ReportController extends Controller
      */
     public function store(Request $request)
     {
-        try {
-            $validator = Validator::make($request->all(), [
-                'judul' => 'required|string|max:100',
-                'deskripsi' => self::RULE_REQUIRED_STRING,
-                'lokasi' => self::RULE_REQUIRED_STRING,
-                'foto' => 'required|image|mimes:jpeg,png,jpg,gif',
-                'id_pemerintah' => 'nullable|exists:pemerintah,id',
-                'id_kategori' => 'required|exists:kategori_report,id',
-            ]);
+        $validator = Validator::make($request->all(), [
+            'judul' => 'required|string|max:100',
+            'deskripsi' => self::RULE_REQUIRED_STRING,
+            'lokasi' => self::RULE_REQUIRED_STRING,
+            'foto' => 'required|image|mimes:jpeg,png,jpg,gif',
+            'id_pemerintah' => 'nullable|exists:pemerintah,id',
+            'id_kategori' => 'required|exists:kategori_report,id',
+        ]);
 
-            if ($validator->fails()) {
-                return response()->json($validator->errors(), 422);
-            }
-
-            if (!$this->checkRole("masyarakat")) {
-                return response()->json(['error' => self::ERROR_UNAUTHORIZED], 401);
-            }
-
-            $fotoPath = $this->uploadImage($request->file('foto'), 'public/reports');
-
-            $status = [
-                [
-                    'status' => 'Menunggu',
-                    'deskripsi' => 'Laporan sedang diverifikasi oleh Admin',
-                    'tanggal' => now()->toISOString(),
-                ]
-            ];
-
-            $report = Report::create([
-                'judul' => $request->judul,
-                'deskripsi' => $request->deskripsi,
-                'lokasi' => $request->lokasi,
-                'status' => $status,
-                'foto' => $fotoPath,
-                'id_masyarakat' => auth()->user()->id,
-                'id_pemerintah' => $request->id_pemerintah,
-                'id_kategori' => $request->id_kategori,
-            ]);
-
-            $response = response()->json($report, 201);
-        } catch (\Exception $e) {
-            Log::error('Error creating report: ' . $e->getMessage());
-
-            $response = response()->json([
-                'error' => 'An error occurred while creating the report. Please try again later.'
-            ], 500);
+        if ($validator->fails()){
+            return response()->json($validator->errors(), 422);
+        }
+        if (!$this->checkRole('masyarakat')){
+            return response()->json(['error' => self::ERROR_UNAUTHORIZED], 401);
         }
 
-        return $response;
+        $report = Report::create(array_merge($request->only(['judul', 'deskripsi', 'lokasi', 'id_pemerintah', 'id_kategori']), [
+            'foto' => $this->uploadImage($request->file('foto'), 'reports'),
+            'id_masyarakat' => auth()->id(),
+            'status' => [['status' => 'Menunggu', 'deskripsi' => 'Laporan sedang diverifikasi oleh Admin', 'tanggal' => now()->toISOString()]]
+        ]));
+
+        return response()->json($report, 201);
     }
 
+    private function filterReports($conditions)
+    {
+        $reports = Report::where($conditions)->paginate(10);
+        return response()->json($reports->isEmpty() ? ['message' => 'No reports found'] : $reports, 200);
+    }
 
-    /**
-     * Get all reports by category ID.
-     */
     public function getByCategory($categoryId)
     {
-        $reports = Report::where('id_kategori', $categoryId)->paginate(10);
-
-        if ($reports->isEmpty()) {
-            return response()->json(['message' => 'No reports found for this category'], 404);
-        }
-
-        return response()->json($reports, 200);
+        return $this->filterReports(['id_kategori' => $categoryId]);
     }
 
     /**
@@ -220,107 +185,48 @@ class ReportController extends Controller
         return response()->json($report, 200);
     }
 
-    /**
-     * Display the specified report.
-     */
     public function show($id)
     {
-        $report = Report::find($id);
+        $report = Report::with(['masyarakat.user:id,name', 'pemerintah.user:id,name', 'category:id,name'])->find($id);
         if (!$report) {
             return response()->json(['message' => self::ERROR_REPORT_NOT_FOUND], 404);
         }
 
-        $responseData = [
+        return response()->json([
             'report' => $report,
-            'masyarakat' => [
-                'id' => $report->masyarakat->id,
-                'name' => $report->masyarakat->user->name,
-            ],
-            'pemerintah' => [
-                'id' => $report->pemerintah->id ?? null,
-                'name' => $report->pemerintah->user->name ?? null,
-            ],
-            'kategori' => [
-                'id' => $report->category->id ?? null,
-                'name' => $report->category->name ?? null,
-            ],
+            'masyarakat' => $report->masyarakat ? ['id' => $report->masyarakat->id, 'name' => $report->masyarakat->user->name] : null,
+            'pemerintah' => $report->pemerintah ? ['id' => $report->pemerintah->id, 'name' => $report->pemerintah->user->name] : null,
+            'kategori' => $report->category,
             'like' => RatingReport::where('id_report', $report->id)->count(),
             'comment' => Diskusi::where('id_report', $report->id)->count(),
-        ];
-
-        if (auth('sanctum')->check()) {
-            $responseData['hasLiked'] = auth('sanctum')->user()->toggleLikeReport($report->id, true);
-            $responseData['hasBookmark'] = auth('sanctum')->user()->toggleBookmark($report->id, true);
-        } else {
-            $responseData['hasLiked'] = false;
-        }
-
-        return response()->json($responseData, 200);
+            'hasLiked' => auth('sanctum')->check() ? auth('sanctum')->user()->toggleLikeReport($report->id, true) : false,
+            'hasBookmark' => auth('sanctum')->check() ? auth('sanctum')->user()->toggleBookmark($report->id, true) : false
+        ], 200);
     }
 
     public function searchReports(Request $request)
     {
-        $search = $request->input('search');
-
-        $reports = Report::where('judul', 'like', "%$search%")
-            ->orWhere('deskripsi', 'like', "%$search%")
-            ->paginate(10);
-
-
-        if ($reports->isEmpty()) {
-            return response()->json(['message' => 'No reports found'], 404);
-        }
-
-        return response()->json($reports, 200);
+        return $this->filterReports([['judul', 'like', "%{$request->search}%"], ['deskripsi', 'like', "%{$request->search}%"]]);
     }
 
 
     public function update(Request $request, $id)
     {
-        $validator = Validator::make($request->all(), [
-            'judul' => 'nullable|string|max:100',
-            'deskripsi' => 'nullable|string',
-            'lokasi' => 'nullable|string',
-            'status' => 'nullable|array',
-            'foto' => 'nullable|file|mimes:jpeg,png,jpg,gif|max:2048',
-            'id_pemerintah' => 'nullable|exists:pemerintah,id',
-            'id_kategori' => 'nullable|exists:kategori_report,id',
-        ]);
-
         $report = Report::find($id);
-
         if (!$report) {
-            $response = response()->json(['message' => self::ERROR_REPORT_NOT_FOUND], 404);
-        } elseif ($validator->fails()) {
-            $response = response()->json($validator->errors(), 422);
-        } elseif (!$this->checkOwner($report->masyarakat->id)) {
-            $response = response()->json(['message' => self::ERROR_UNAUTHORIZED], 401);
-        } else {
-            $report->update($request->only([
-                'judul',
-                'deskripsi',
-                'lokasi',
-                'status',
-                'id_pemerintah',
-                'id_kategori'
-            ]));
-
-            if ($request->hasFile('foto')) {
-                if ($report->foto) {
-                    $this->deleteImage($report->foto);
-                }
-                $report->foto = $this->uploadImage($request->file('foto'), 'public/report');
-            }
-
-            $report->save();
-            $response = response()->json($report, 200);
+            return response()->json(['message' => self::ERROR_REPORT_NOT_FOUND], 404);
         }
-
-        return $response;
+        if (!$this->checkOwner($report->masyarakat->id)){
+            return response()->json(['message' => self::ERROR_UNAUTHORIZED], 401);
+        }
+        $data = $request->only(['judul', 'deskripsi', 'lokasi', 'status', 'id_pemerintah', 'id_kategori']);
+        if ($request->hasFile('foto')) {
+            $this->deleteImage($report->foto);
+            $data['foto'] = $this->uploadImage($request->file('foto'), 'reports');
+        }
+        $report->update($data);
+        return response()->json($report, 200);
     }
-
-
-
 
     /**
      * Remove the specified report from storage.
@@ -328,83 +234,45 @@ class ReportController extends Controller
     public function destroy($id)
     {
         $report = Report::find($id);
-
-        if (!$report) {
+        if (!$report){
             return response()->json(['message' => self::ERROR_REPORT_NOT_FOUND], 404);
         }
-
-        if (!$this->checkOwner($report->masyarakat->id)) {
+        if (!$this->checkOwner($report->masyarakat->id)){
             return response()->json(['message' => self::ERROR_UNAUTHORIZED], 401);
-        }
-
-        if ($report->foto) {
-            $this->deleteImage($report->foto);
-        }
-
+}
+        $this->deleteImage($report->foto);
         $report->delete();
-
         return response()->json(['message' => 'Report deleted successfully'], 200);
     }
 
-    /**
-     * Summary of like
-     * @param \Illuminate\Http\Request $request
-     * @return mixed|\Illuminate\Http\JsonResponse
-     */
     public function like(Request $request)
     {
-        $report = Report::find($request->id);
-        $response = auth()->user()->toggleLikeReport($report->id, false);
-
-        return response()->json(['success' => $response]);
+        return response()->json(['success' => auth()->user()->toggleLikeReport($request->id, false)]);
     }
 
     public function bookmark(Request $request)
     {
-        $report = Report::find($request->id);
-        $response = auth()->user()->toggleBookmark($report->id, false);
-
-        return response()->json(['success' => $response]);
+        return response()->json(['success' => auth()->user()->toggleBookmark($request->id, false)]);
     }
 
     public function diskusiStore(Request $request, $id)
     {
-        $validator = Validator::make($request->all(), [
-            'content' => self::RULE_REQUIRED_STRING,
-        ]);
-
-        if ($validator->fails()) {
+        $validator = Validator::make($request->all(), ['content' => self::RULE_REQUIRED_STRING]);
+        if ($validator->fails()){
             return response()->json($validator->errors(), 422);
         }
-
-        $report = Report::find($id);
-        $response = auth()->user()->sendDiskusi($report->id, $request->content);
-
-        return response()->json(['success' => $response]);
+        return response()->json(['success' => auth()->user()->sendDiskusi($id, $request->content)]);
     }
 
     public function diskusiShow($id)
     {
-
-        $report = Report::find($id);
-        $diskusi = Diskusi::where('id_report', $report->id)->get();
-        foreach ($diskusi as $data) {
-            $data->user;
-        }
-        $responseData = $diskusi;
-
-        return response()->json($responseData, 200);
+        $diskusi = Diskusi::where('id_report', $id)->with('user')->get();
+        return response()->json($diskusi, 200);
     }
+
     public function likedReports()
     {
-        $user = auth('sanctum')->user(); // Ambil user yang sedang login
-
-        // Ambil semua id_report yang di-like oleh user
-        $likedReportIds = RatingReport::where('id_user', $user->id)->pluck('id_report');
-
-        // Ambil semua report berdasarkan ID yang di-like
-        $likedReports = Report::whereIn('id', $likedReportIds)->paginate(10);
-
-        return response()->json($likedReports, 200);
+        $likedReportIds = RatingReport::where('id_user', auth('sanctum')->id())->pluck('id_report');
+        return response()->json(Report::whereIn('id', $likedReportIds)->paginate(10), 200);
     }
 }

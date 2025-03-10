@@ -11,7 +11,7 @@ use App\Models\Berita;
 class BeritaController extends Controller
 {
     private const STRING_MAX_50 = 'required|string|max:50';
-    public function indexWeb(Request $request)
+    public function index()
     {
         $berita = Berita::with([
             'kategori' => function ($query) {
@@ -31,28 +31,6 @@ class BeritaController extends Controller
             } else {
                 $item->hasLiked = false;
             }
-            return $item;
-        });
-
-        return response()->json($berita);
-    }
-
-    public function indexMobile(Request $request)
-    {
-
-        $berita = Berita::with([
-            'kategori' => function ($query) {
-                $query->select('id', 'name', 'foto');
-            },
-            'user' => function ($query) {
-                $query->select('id', 'name');
-            },
-        ])
-            ->paginate(7); // 7 items per page
-
-        // get like count
-        $berita->getCollection()->transform(function ($item) {
-            $item->like_count = RatingBerita::where('id_berita', $item->id)->count();
             return $item;
         });
 
@@ -101,7 +79,7 @@ class BeritaController extends Controller
             return response()->json(['error' => 'You are not authorized!'], 401);
         }
 
-        $fotoPath = $this->uploadImage($request->file('foto'), 'public/berita');
+        $fotoPath = $this->uploadImage($request->file('foto'), 'berita');
 
         $berita = Berita::create([
             'title' => $request->title,
@@ -148,7 +126,7 @@ class BeritaController extends Controller
             if ($berita->foto) {
                 $this->deleteImage($berita->foto);
             }
-            $berita->foto = $this->uploadImage($request->file('foto'), 'public/berita');
+            $berita->foto = $this->uploadImage($request->file('foto'), 'berita');
         }
 
         $berita->save();
@@ -197,11 +175,6 @@ class BeritaController extends Controller
         return response()->json($reports, 200);
     }
 
-    /**
-     * Summary of like
-     * @param \Illuminate\Http\Request $request
-     * @return mixed|\Illuminate\Http\JsonResponse
-     */
     public function like(Request $request)
     {
         $berita = Berita::find($request->id);

@@ -81,7 +81,7 @@ Route::prefix('report')->group(function () {
 
 Route::prefix('berita')->group(function () {
     // get all berita
-    Route::get('/', [BeritaController::class, 'indexWeb']);
+    Route::get('/', [BeritaController::class, 'index']);
 
     // post berita
     Route::post('/', [BeritaController::class, 'store'])->middleware('auth:sanctum');
