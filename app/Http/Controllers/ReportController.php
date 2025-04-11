@@ -16,20 +16,29 @@ class ReportController extends Controller
     private const ERROR_REPORT_NOT_FOUND = 'Report not found';
     private const ERROR_UNAUTHORIZED = 'You are not authorized!';
     private const RULE_REQUIRED_STRING = 'required|string';
+    
     /**
-     * Display a listing of the reports.
+     * Sesudah
      */
     public function index()
     {
-        $reports = Report::with('masyarakat.user:id,name')->paginate(10);
-        
-        $reports->transform(function ($report) {
-            $report->pelapor = optional($report->masyarakat->user)->name;
-            unset($report->masyarakat);
-            return $report;
-        });
-        
+        $reports = Report::with([
+            'masyarakat.user' => function ($query) {
+                $query->select('id', 'name');
+            }
+        ])->paginate(10);
+
+        // Gunakan method khusus untuk transformasi report
+        $reports->getCollection()->transform([$this, 'transformReport']);
+
         return response()->json($reports, 200);
+    }
+
+    private function transformReport($report)
+    {
+        $report->pelapor = optional($report->masyarakat->user)->name;
+        unset($report->masyarakat);
+        return $report;
     }
 
     /**
@@ -209,7 +218,9 @@ class ReportController extends Controller
         return $this->filterReports([['judul', 'like', "%{$request->search}%"], ['deskripsi', 'like', "%{$request->search}%"]]);
     }
 
-
+    /**
+     * Sesudah
+     */
     public function update(Request $request, $id)
     {
         $report = Report::find($id);
@@ -264,11 +275,21 @@ class ReportController extends Controller
         return response()->json(['success' => auth()->user()->sendDiskusi($id, $request->content)]);
     }
 
+    /**
+     * Sebelum
+     */
     public function diskusiShow($id)
     {
-        $diskusi = Diskusi::where('id_report', $id)->with('user')->get();
-        return response()->json($diskusi, 200);
+        $report = Report::find($id);
+        $diskusi = Diskusi::where('id_report', $report->id)->get();
+        foreach ($diskusi as $data) {
+            $data->user;
+        }
+        $responseData = $diskusi;
+
+        return response()->json($responseData, 200);
     }
+
 
     public function likedReports()
     {
