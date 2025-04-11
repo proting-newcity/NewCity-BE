@@ -139,7 +139,22 @@ class ReportController extends Controller
         return response()->json(['data' => $filteredReports], 200);
     }
 
-
+    /**
+     * Get Report by logged in user
+     */
+    public function myReports()
+    {
+        $user = auth('sanctum')->user();
+        
+        if (!$user) {
+            return response()->json(['message' => self::ERROR_UNAUTHORIZED], 401);
+        }
+    
+        $reports = Report::where('id_masyarakat', $user->id)->paginate(10);
+    
+        return response()->json($reports, 200);
+    }
+    
     /**
      * Update status.
      */
