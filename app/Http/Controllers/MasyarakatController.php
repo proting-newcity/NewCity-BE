@@ -7,7 +7,8 @@ use Illuminate\Pagination\LengthAwarePaginator;
 
 
 class MasyarakatController extends Controller
-{public function notification(Request $request)
+{
+    public function notification(Request $request)
     {
         $user = auth()->user();
     

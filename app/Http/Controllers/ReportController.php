@@ -2,43 +2,30 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Pemerintah;
-use App\Models\RatingReport;
-use App\Models\Diskusi;
-use App\Models\Report;
+use App\Http\Services\ReportService;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\Log;
 
 class ReportController extends Controller
 {
     private const ERROR_REPORT_NOT_FOUND = 'Report not found';
     private const ERROR_UNAUTHORIZED = 'You are not authorized!';
     private const RULE_REQUIRED_STRING = 'required|string';
+
+    protected $reportService;
+
+    public function __construct(ReportService $reportService)
+    {
+        $this->reportService = $reportService;
+    }
     
     /**
-     * Sesudah
+     * Display paginated reports
      */
     public function index()
     {
-        $reports = Report::with([
-            'masyarakat.user' => function ($query) {
-                $query->select('id', 'name');
-            }
-        ])->paginate(10);
-
-        // Gunakan method khusus untuk transformasi report
-        $reports->getCollection()->transform([$this, 'transformReport']);
-
-        return response()->json($reports, 200);
-    }
-
-    private function transformReport($report)
-    {
-        $report->pelapor = optional($report->masyarakat->user)->name;
-        unset($report->masyarakat);
-        return $report;
+        return response()->json($this->reportService->getPaginatedReports(), 200);
     }
 
     /**
@@ -46,67 +33,46 @@ class ReportController extends Controller
      */
     public function indexAdmin()
     {
-        $reports = Report::all();
+        $reports = $this->reportService->getReportsForAdmin();
 
-        // Filter laporan berdasarkan status terakhir
-        $filteredReports = $reports->filter(function ($report) {
-            $statuses = $report->status; // Langsung akses array
-            if (is_array($statuses) && !empty($statuses)) {
-                $lastStatus = end($statuses); // Ambil status terakhir
-                return isset($lastStatus['status']) && $lastStatus['status'] == 'Menunggu' || $lastStatus['status'] == 'Dalam Proses' || $lastStatus['status'] == 'Ditolak';
-            }
-            return false;
-        });
-        // Jika tidak ada laporan yang cocok, kembalikan pesan error
-        if ($filteredReports->isEmpty()) {
+        if (empty($reports)) {
             return response()->json(['message' => 'No reports found for this status'], 404);
         }
-
-        // Ubah hasil menjadi array tanpa key indeks
-        $filteredReports = array_values($filteredReports->toArray());
-
-        return response()->json($filteredReports, 200);
+        return response()->json($reports, 200);
     }
 
     /**
-     * Store a newly created report in storage.
+     * Store a newly created report.
      */
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'judul' => 'required|string|max:100',
-            'deskripsi' => self::RULE_REQUIRED_STRING,
-            'lokasi' => self::RULE_REQUIRED_STRING,
-            'foto' => 'required|image|mimes:jpeg,png,jpg,gif',
-            'id_pemerintah' => 'nullable|exists:pemerintah,id',
-            'id_kategori' => 'required|exists:kategori_report,id',
+            'judul'        => 'required|string|max:100',
+            'deskripsi'    => 'required|string',
+            'lokasi'       => 'required|string',
+            'foto'         => 'required|image|mimes:jpeg,png,jpg,gif',
+            'id_pemerintah'=> 'nullable|exists:pemerintah,id',
+            'id_kategori'  => 'required|exists:kategori_report,id',
         ]);
-
         if ($validator->fails()){
             return response()->json($validator->errors(), 422);
         }
-        if (!$this->checkRole('masyarakat')){
-            return response()->json(['error' => self::ERROR_UNAUTHORIZED], 401);
+        
+        if (!$this->reportService->checkUserRole('masyarakat')) {
+            return response()->json(['error' => 'You are not authorized!'], 401);
         }
 
-        $report = Report::create(array_merge($request->only(['judul', 'deskripsi', 'lokasi', 'id_pemerintah', 'id_kategori']), [
-            'foto' => $this->uploadImage($request->file('foto'), 'reports'),
-            'id_masyarakat' => auth()->id(),
-            'status' => [['status' => 'Menunggu', 'deskripsi' => 'Laporan sedang diverifikasi oleh Admin', 'tanggal' => now()->toISOString()]]
-        ]));
+        $report = $this->reportService->createReport($request->all(), $request->file('foto'));
 
         return response()->json($report, 201);
     }
 
-    private function filterReports($conditions)
-    {
-        $reports = Report::where($conditions)->paginate(10);
-        return response()->json($reports->isEmpty() ? ['message' => 'No reports found'] : $reports, 200);
-    }
-
+    /**
+     * Get reports by category.
+     */
     public function getByCategory($categoryId)
     {
-        return $this->filterReports(['id_kategori' => $categoryId]);
+        return response()->json($this->reportService->getReportsByCondition(['id_kategori' => $categoryId]), 200);
     }
 
     /**
@@ -114,186 +80,127 @@ class ReportController extends Controller
      */
     public function getReportsByStatus($status)
     {
-        // Ambil semua laporan
-        $reports = Report::all();
-
-        // Filter laporan berdasarkan status terakhir
-        $filteredReports = $reports->filter(function ($report) use ($status) {
-            $statuses = $report->status; // Langsung akses array
-            if (is_array($statuses) && !empty($statuses)) {
-                $lastStatus = end($statuses); // Ambil status terakhir
-                return isset($lastStatus['status']) && $lastStatus['status'] == $status;
-            }
-            return false;
-        });
-
-        // Jika tidak ada laporan yang cocok, kembalikan pesan error
-        if ($filteredReports->isEmpty()) {
+        $reports = $this->reportService->getReportsByStatus($status);
+        if (empty($reports)) {
             return response()->json(['message' => 'No reports found for this status'], 404);
         }
-
-        // Ubah hasil menjadi array tanpa key indeks
-        $filteredReports = array_values($filteredReports->toArray());
-
-        // Kembalikan laporan yang difilter
-        return response()->json(['data' => $filteredReports], 200);
+        return response()->json(['data' => $reports], 200);
     }
 
-
+    /**
+     * Get Report by logged in user
+     */
+    public function myReports()
+    {
+        $reportData = $this->reportService->getMyReports();
+        if (isset($reportData['error'])) {
+            return response()->json($reportData, 401);
+        }
+        return response()->json($reportData, 200);
+    }
+    
     /**
      * Update status.
      */
     public function addStatus(Request $request, $id)
     {
-        // Validasi input
         $validated = $request->validate([
-            'status' => self::RULE_REQUIRED_STRING,
+            'status' => 'required|string',
         ]);
-
-        // Ambil laporan berdasarkan ID
-        $report = Report::find($id);
-        if (!$report) {
-            return response()->json(['message' => self::ERROR_REPORT_NOT_FOUND], 404);
-        }
-
-        if ($report->id_pemerintah == null) {
-            $pemerintah = Pemerintah::inRandomOrder()->first();
-            $report->id_pemerintah = $pemerintah->id;
-            $report->save();
-        }
-
-        $institusiName = optional($report->pemerintah->institusi)->name ?? 'pemerintah terkait';
-
-        // Hardcode mapping status -> deskripsi
-        $statusToDescription = [
-            'Dalam Proses' => "Laporan sedang ditangani oleh $institusiName.",
-            'Tindak Lanjut' => "Laporan telah diproses oleh $institusiName.",
-            'Selesai' => "Laporan sudah diselesaikan oleh $institusiName.",
-            'Ditolak' => "Laporan tidak memenuhi syarat dan ketentuan yang berlaku.",
-        ];
-
-
-        // Ambil deskripsi berdasarkan status
-        $deskripsi = $statusToDescription[$validated['status']] ?? 'Status tidak diketahui';
-
-        // Tambahkan status baru
-        $newStatus = [
-            'status' => $validated['status'],
-            'deskripsi' => $deskripsi,
-            'tanggal' => now()->toISOString(),
-        ];
-
-        // Tambahkan status ke field "status" (assume it's stored as JSON)
-        $status = $report->status; // Mengambil field JSON
-        $status[] = $newStatus;    // Menambahkan data baru
-        $report->status = $status; // Update field JSON
-
-        // Simpan laporan
-        $report->save();
-
-        return response()->json($report, 200);
-    }
-
-    public function show($id)
-    {
-        $report = Report::with(['masyarakat.user:id,name', 'pemerintah.user:id,name', 'category:id,name'])->find($id);
-        if (!$report) {
-            return response()->json(['message' => self::ERROR_REPORT_NOT_FOUND], 404);
-        }
-
-        return response()->json([
-            'report' => $report,
-            'masyarakat' => $report->masyarakat ? ['id' => $report->masyarakat->id, 'name' => $report->masyarakat->user->name] : null,
-            'pemerintah' => $report->pemerintah ? ['id' => $report->pemerintah->id, 'name' => $report->pemerintah->user->name] : null,
-            'kategori' => $report->category,
-            'like' => RatingReport::where('id_report', $report->id)->count(),
-            'comment' => Diskusi::where('id_report', $report->id)->count(),
-            'hasLiked' => auth('sanctum')->check() ? auth('sanctum')->user()->toggleLikeReport($report->id, true) : false,
-            'hasBookmark' => auth('sanctum')->check() ? auth('sanctum')->user()->toggleBookmark($report->id, true) : false
-        ], 200);
-    }
-
-    public function searchReports(Request $request)
-    {
-        return $this->filterReports([['judul', 'like', "%{$request->search}%"], ['deskripsi', 'like', "%{$request->search}%"]]);
+        $result = $this->reportService->addStatus($id, $validated['status']);
+        return response()->json($result, isset($result['error']) ? 404 : 200);
     }
 
     /**
-     * Sesudah
+     * Show report details.
+     */
+    public function show($id)
+    {
+        $report = $this->reportService->getReportDetails($id);
+        if (isset($report['error'])) {
+            return response()->json(['message' => 'Report not found'], 404);
+        }
+        return response()->json($report, 200);
+    }
+
+    /**
+     * Search report by keyword.
+     */
+    public function searchReports(Request $request)
+    {
+        $searchTerm = $request->input('search');
+        return response()->json($this->reportService->searchReports($searchTerm), 200);
+    }
+
+
+    /**
+     * Update a report.
      */
     public function update(Request $request, $id)
     {
-        $report = Report::find($id);
-        if (!$report) {
-            return response()->json(['message' => self::ERROR_REPORT_NOT_FOUND], 404);
+        $report = $this->reportService->updateReport($id, $request->all(), $request->file('foto'));
+        if (isset($report['error'])) {
+            return response()->json($report, $report['error_code'] ?? 400);
         }
-        if (!$this->checkOwner($report->masyarakat->id)){
-            return response()->json(['message' => self::ERROR_UNAUTHORIZED], 401);
-        }
-        $data = $request->only(['judul', 'deskripsi', 'lokasi', 'status', 'id_pemerintah', 'id_kategori']);
-        if ($request->hasFile('foto')) {
-            $this->deleteImage($report->foto);
-            $data['foto'] = $this->uploadImage($request->file('foto'), 'reports');
-        }
-        $report->update($data);
         return response()->json($report, 200);
     }
 
     /**
-     * Remove the specified report from storage.
+     * Delete report.
      */
     public function destroy($id)
     {
-        $report = Report::find($id);
-        if (!$report){
-            return response()->json(['message' => self::ERROR_REPORT_NOT_FOUND], 404);
-        }
-        if (!$this->checkOwner($report->masyarakat->id)){
-            return response()->json(['message' => self::ERROR_UNAUTHORIZED], 401);
-}
-        $this->deleteImage($report->foto);
-        $report->delete();
-        return response()->json(['message' => 'Report deleted successfully'], 200);
-    }
-
-    public function like(Request $request)
-    {
-        return response()->json(['success' => auth()->user()->toggleLikeReport($request->id, false)]);
-    }
-
-    public function bookmark(Request $request)
-    {
-        return response()->json(['success' => auth()->user()->toggleBookmark($request->id, false)]);
-    }
-
-    public function diskusiStore(Request $request, $id)
-    {
-        $validator = Validator::make($request->all(), ['content' => self::RULE_REQUIRED_STRING]);
-        if ($validator->fails()){
-            return response()->json($validator->errors(), 422);
-        }
-        return response()->json(['success' => auth()->user()->sendDiskusi($id, $request->content)]);
+        $result = $this->reportService->deleteReport($id);
+        $code = isset($result['error']) ? 404 : 200;
+        return response()->json($result, $code);
     }
 
     /**
-     * Sebelum
+     * Toggle Like on a report.
+     */
+    public function like(Request $request)
+    {
+        $result = auth()->user()->toggleLikeReport($request->id, false);
+        return response()->json(['success' => $result], 200);
+    }
+
+    /**
+     * Toggle bookmark on a report.
+     */
+    public function bookmark(Request $request)
+    {
+        $result = auth()->user()->toggleBookmark($request->id, false);
+        return response()->json(['success' => $result], 200);
+    }
+
+    /**
+     * Store a new discussion message for a report.
+     */
+    public function diskusiStore(Request $request, $id)
+    {
+        $validator = Validator::make($request->all(), [
+            'content' => 'required|string',
+        ]);
+        if ($validator->fails()){
+            return response()->json($validator->errors(), 422);
+        }
+        $success = auth()->user()->sendDiskusi($id, $request->content);
+        return response()->json(['success' => $success], 200);
+    }
+
+    /**
+     * Show all discussion messages for a report.
      */
     public function diskusiShow($id)
     {
-        $report = Report::find($id);
-        $diskusi = Diskusi::where('id_report', $report->id)->get();
-        foreach ($diskusi as $data) {
-            $data->user;
-        }
-        $responseData = $diskusi;
-
-        return response()->json($responseData, 200);
+        return response()->json($this->reportService->getDiskusiForReport($id), 200);
     }
 
-
+    /**
+     * Get liked reports.
+     */
     public function likedReports()
     {
-        $likedReportIds = RatingReport::where('id_user', auth('sanctum')->id())->pluck('id_report');
-        return response()->json(Report::whereIn('id', $likedReportIds)->paginate(10), 200);
+        return response()->json($this->reportService->getLikedReports(), 200);
     }
 }
