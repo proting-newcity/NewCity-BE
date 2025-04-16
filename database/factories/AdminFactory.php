@@ -15,9 +15,8 @@ class AdminFactory extends Factory
 
     public function definition()
     {
-        $user = User::factory()->create();
         return [
-            'id'  => $user->id,
+            'id'  => User::factory()->create(),
             'nip' => $this->faker->unique()->numerify('1980##########'),
         ];
     }

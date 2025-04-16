@@ -21,8 +21,8 @@ class BeritaFactory extends Factory
             'content' => $this->faker->paragraphs(1, true),
             'foto' => 'berita/default.jpg',
             'tanggal' => $this->faker->date('Y-m-d'),
-            'status' => 'published', // or 'draft' if you use multiple statuses
-            'id_kategori' => KategoriBerita::factory(), // create related category
+            'status' => 'published', 
+            'id_kategori' => KategoriBerita::factory(),
             'id_user' => Admin::factory(),
         ];
     }

@@ -22,7 +22,6 @@ class KategoriTest extends TestCase
         Storage::fake('public');
     }
 
-    /** @test */
     public function testIndexBeritaReturnsAllKategoriBerita()
     {
         KategoriBerita::factory()->create(['name' => 'Berita A']);
@@ -35,7 +34,6 @@ class KategoriTest extends TestCase
                  ->assertJsonFragment(['name' => 'Berita B']);
     }
 
-    /** @test */
     public function testIndexReportReturnsAllKategoriReport()
     {
         KategoriReport::factory()->create(['name' => 'Report X']);
@@ -48,7 +46,6 @@ class KategoriTest extends TestCase
                  ->assertJsonFragment(['name' => 'Report Y']);
     }
 
-    /** @test */
     public function testStoreReportValidationFailsWhenNameMissing()
     {
         $user = User::factory()->create();
@@ -63,7 +60,6 @@ class KategoriTest extends TestCase
                  ->assertJsonValidationErrors(['name']);
     }
 
-    /** @test */
     public function testStoreReportSuccessfullyCreatesKategoriReport()
     {
         $user = User::factory()->create();
@@ -83,7 +79,6 @@ class KategoriTest extends TestCase
         $this->assertDatabaseHas('kategori_report', $postData);
     }
 
-    /** @test */
     public function testStoreBeritaValidationFailsWhenFieldsMissing()
     {
         $user = User::factory()->create();
@@ -99,7 +94,6 @@ class KategoriTest extends TestCase
                  ->assertJsonValidationErrors(['name', 'foto']);
     }
 
-    /** @test */
     public function testStoreBeritaSuccessfullyCreatesKategoriBerita()
     {
         $user = User::factory()->create();
