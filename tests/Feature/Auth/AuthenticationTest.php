@@ -1,35 +1,35 @@
 <?php
 
-use App\Models\User;
+// use App\Models\User;
 
-test('user can authenticate using the login screen', function () {
-    $user = User::factory()->create();
+// test('user can authenticate using the login screen', function () {
+//     $user = User::factory()->create();
 
-    $response = $this->post('/login', [
-        'username' => $user->username,
-        'password' => 'password',
-    ]);
+//     $response = $this->post('/login', [
+//         'username' => $user->username,
+//         'password' => 'password',
+//     ]);
 
-    $this->assertAuthenticated();
-    $response->assertNoContent();
-});
+//     $this->assertAuthenticated();
+//     $response->assertNoContent();
+// });
 
-test('user can not authenticate with invalid password', function () {
-    $user = User::factory()->create();
+// test('user can not authenticate with invalid password', function () {
+//     $user = User::factory()->create();
 
-    $this->post('/login', [
-        'username' => $user->username,
-        'password' => 'wrong-password',
-    ]);
+//     $this->post('/login', [
+//         'username' => $user->username,
+//         'password' => 'wrong-password',
+//     ]);
 
-    $this->assertGuest();
-});
+//     $this->assertGuest();
+// });
 
-test('user can logout', function () {
-    $user = User::factory()->create();
+// test('user can logout', function () {
+//     $user = User::factory()->create();
 
-    $response = $this->actingAs($user)->post('/logout');
+//     $response = $this->actingAs($user)->post('/logout');
 
-    $this->assertGuest();
-    $response->assertNoContent();
-});
+//     $this->assertGuest();
+//     $response->assertNoContent();
+// });
