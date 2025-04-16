@@ -1,259 +1,160 @@
 <?php
 
-    namespace App\Http\Controllers;
+namespace App\Http\Controllers;
 
-    use Illuminate\Http\Request;
-    use Illuminate\Auth\Events\Registered;
-    use Illuminate\Support\Facades\Validator;
-    use Illuminate\Support\Facades\Hash;
-    use Illuminate\Validation\Rules;
+use Illuminate\Http\Request;
+use Illuminate\Auth\Events\Registered;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rules;
 
-    use App\Models\Pemerintah;
-    use App\Models\Masyarakat;
-    use App\Models\user;
+use App\Models\Pemerintah;
+use App\Models\Masyarakat;
+use App\Models\user;
+use App\Http\Services\AdminService;
 
-    class AdminController extends Controller
+class AdminController extends Controller
+{
+    protected $adminService;
+    private const ERROR_UNAUTHORIZED = 'You are not authorized!';
+    private const RULE_REQUIRED_STRING = 'required|string';
+
+    public function __construct(AdminService $adminService)
     {
-        private const ERROR_UNAUTHORIZED = 'You are not authorized!';
-        private const RULE_REQUIRED_STRING = 'required|string';
-        public function storePemerintah(Request $request)
-        {
-            if (!$this->checkRole("admin")) {
-                return response()->json(['error' => self::ERROR_UNAUTHORIZED], 401);
-            }
-            try {
-                $request->validate([
-                    'name' => self::RULE_REQUIRED_STRING,
-                    'username' => 'required|string|max:255|unique:user',
-                    'phone' => self::RULE_REQUIRED_STRING,
-                    'password' => ['required', Rules\Password::defaults()],
-                    'institusi_id' => 'nullable|exists:institusi,id',
-                    'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif',
-                    'status' => 'required|boolean',
-                ]);
-            } catch (\Illuminate\Validation\ValidationException $e) {
-                return response()->json(['errors' => $e->errors()], 422);
-            }
+        $this->adminService = $adminService;
+    }
 
-            $fotoPath = $this->uploadImage($request->file('foto'), 'users');
-
-            $user = User::create([
-                'name' => $request->name,
-                'username' => $request->username,
-                'password' => Hash::make($request->password),
-                'foto' => $fotoPath,
-            ]);
-
-            Pemerintah::create([
-                'id' => $user->id,
-                'status' => $request->status,
-                'phone' => $request->phone,
-                'institusi_id' => $request->institusi_id,
-            ]);
-
-            event(new Registered($user));
-
-            return response()->noContent();
+    /**
+     * Register a new Pemerintah account.
+     */
+    public function storePemerintah(Request $request)
+    {
+        if (!$this->checkRole("admin")) {
+            return response()->json(['error' => self::ERROR_UNAUTHORIZED], 401);
         }
 
-        public function updatePemerintah(Request $request, $id)
-        {
-            $validator = Validator::make($request->all(), [
-                'name' => 'nullable|string|max:255',
-                'username' => "nullable|string|max:255|unique:user,username,$id",
-                'phone' => 'nullable|string|max:255',
-                'password' => ['nullable', Rules\Password::defaults()],
+        try {
+            $request->validate([
+                'name'         => self::RULE_REQUIRED_STRING,
+                'username'     => 'required|string|max:255|unique:user',
+                'phone'        => self::RULE_REQUIRED_STRING,
+                'password'     => ['required', Rules\Password::defaults()],
                 'institusi_id' => 'nullable|exists:institusi,id',
-                'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif',
-                'status' => 'nullable|boolean',
+                'foto'         => 'nullable|image|mimes:jpeg,png,jpg,gif',
+                'status'       => 'required|boolean',
             ]);
-        
-            // Check if validation fails
-            if ($validator->fails()) {
-                return response()->json(['errors' => $validator->errors()], 422);
-            }
-        
-            $user = User::find($id);
-            $pemerintah = Pemerintah::find($id);
-        
-            if (!$user || !$pemerintah) {
-                return response()->json(['message' => 'User or Pemerintah not found'], 404);
-            }
-        
-            // Handle file upload for foto (if provided)
-            if ($request->hasFile('foto')) {
-                if ($user->foto) {
-                    $this->deleteImage($user->foto);
-                }
-                
-                $user->foto = $this->uploadImage($request->file('foto'), 'users');
-            }
-        
-            // Handle text fields for User (name, username, password)
-            if ($request->has('name')) {
-                $user->name = $request->input('name');
-            }
-            if ($request->has('username')) {
-                $user->username = $request->input('username');
-            }
-            if ($request->has('password')) {
-                $user->password = Hash::make($request->input('password'));
-            }
-        
-            $user->save();
-        
-            if ($request->has('phone')) {
-                $pemerintah->phone = $request->input('phone');
-            }
-            if ($request->has('institusi_id')) {
-                $pemerintah->institusi_id = $request->input('institusi_id');
-            }
-            if ($request->has('status')) {
-                $pemerintah->status = $request->input('status');
-            }
-        
-            $pemerintah->save();
-        
-            return response()->json([
-                'message' => 'User and Pemerintah updated successfully',
-                'user' => $user,
-                'pemerintah' => $pemerintah
-            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json(['errors' => $e->errors()], 422);
         }
 
-        public function indexPemerintah()
-        {
-            if (!$this->checkRole("admin")) {
-                return response()->json(['error' => self::ERROR_UNAUTHORIZED], 401);
-            }
+        $this->adminService->storePemerintah($request->all(), $request->file('foto'));
 
-            $pemerintah = Pemerintah::paginate(10);
+        return response()->noContent();
+    }
 
-            foreach ($pemerintah as $pemerintahData) {
-                $pemerintahData->username = $pemerintahData->user->username;
-                $pemerintahData->name = $pemerintahData->user->name;
-                $pemerintahData->institusiName = $pemerintahData->institusi->name;
-            }
+    /**
+     * Update an existing Pemerintah account.
+     */
+    public function updatePemerintah(Request $request, $id)
+    {
+        $validator = Validator::make($request->all(), [
+            'name'         => 'nullable|string|max:255',
+            'username'     => "nullable|string|max:255|unique:user,username,$id",
+            'phone'        => 'nullable|string|max:255',
+            'password'     => ['nullable', Rules\Password::defaults()],
+            'institusi_id' => 'nullable|exists:institusi,id',
+            'foto'         => 'nullable|image|mimes:jpeg,png,jpg,gif',
+            'status'       => 'nullable|boolean',
+        ]);
 
-
-            return response()->json(
-                $pemerintah,
-            );
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        public function showPemerintah($id)
-        {
-            if (!$this->checkRole("admin")) {
-                return response()->json(['error' => self::ERROR_UNAUTHORIZED], 401);
-            }
+        $result = $this->adminService->updatePemerintah($id, $request->all(), $request->file('foto'));
+        $httpCode = isset($result['error']) ? $result['error_code'] : 200;
+        return response()->json($result, $httpCode);
+    }
 
-            $pemerintah = Pemerintah::with('user')->find($id);
 
-            if (!$pemerintah) {
-                return response()->json(['message' => 'Pemerintah not found'], 404);
-            }
-            $pemerintah->user;
-            $pemerintah->institusi;
-            return response()->json(
-                $pemerintah,
-            );
+    /**
+     * Display a paginated list of Pemerintah.
+     */
+    public function indexPemerintah()
+    {
+        if (!$this->checkRole("admin")) {
+            return response()->json(['error' => self::ERROR_UNAUTHORIZED], 401);
+        }
+        $data = $this->adminService->getPemerintahPaginated();
+        return response()->json($data, 200);
+    }
+
+    /**
+     * Show details for a given Pemerintah.
+     */
+    public function showPemerintah($id)
+    {
+        if (!$this->checkRole("admin")) {
+            return response()->json(['error' => self::ERROR_UNAUTHORIZED], 401);
         }
 
-        public function searchPemerintah(Request $request)
+        $data = $this->adminService->getPemerintahDetails($id);
+        if (isset($data['error'])) {
+            return response()->json($data, 404);
+        }
+        return response()->json($data, 200);
+    }
+
+    /**
+     * Search Pemerintah users.
+     */
+    public function searchPemerintah(Request $request)
     {
         $search = $request->input('search');
-
-        $pemerintah = Pemerintah::with(['user', 'institusi'])
-            ->when($search, function ($query) use ($search) {
-                $query->whereHas('user', function ($userQuery) use ($search) {
-                    $userQuery->where('name', 'like', "%$search%")
-                        ->orWhere('username', 'like', "%$search%");
-                })->orWhere('phone', 'like', "%$search%")
-                ->orWhereHas('institusi', function ($institusiQuery) use ($search) {
-                    $institusiQuery->where('name', 'like', "%$search%");
-                });
-            })
-            ->paginate(10);
-
-        $pemerintah->getCollection()->transform(function ($item) {
-            return [
-                'id' => $item->id,
-                'status' => $item->status,
-                'phone' => $item->phone,
-                'institusi_id' => $item->institusi_id,
-                'username' => $item->user->username,
-                'name' => $item->user->name,
-                'institusiName' => $item->institusi->name ?? null,
-                'user' => $item->user,
-                'institusi' => $item->institusi,
-            ];
-        });
-
-        return response()->json($pemerintah);
+        $data = $this->adminService->searchPemerintah($search);
+        return response()->json($data, 200);
     }
 
-        public function destroyPemerintah($id)
-        {
-            if (!$this->checkRole("admin")) {
-                return response()->json(['error' => self::ERROR_UNAUTHORIZED], 401);
-            }
-            $pemerintah = Pemerintah::find($id);
-
-            if (!$pemerintah) {
-                return response()->json(['message' => 'Pemerintah not found'], 404);
-            }
-
-            $user = $pemerintah->user;
-            if ($user) {
-                if ($user->foto) {
-                    $this->deleteImage($user->foto);
-                }
-                $pemerintah->delete();
-                $user->delete();
-            }
-
-
-            return response()->json(['message' => 'Pemerintah and associated user deleted successfully']);
+    /**
+     * Delete a Pemerintah account and its related user.
+     */
+    public function destroyPemerintah($id)
+    {
+        if (!$this->checkRole("admin")) {
+            return response()->json(['error' => self::ERROR_UNAUTHORIZED], 401);
         }
-        
-        public function searchMasyarakatByPhone(Request $request)
-        {
-            $search = $request->input('search');
-        $masyarakat = Masyarakat::where('phone',$search)->first();
-        if(!$masyarakat){
-            return response()->json(['message' => 'Masyarakat not found'], 404);
-        }
-        $user = User::where('id',$masyarakat->id)->first();
-        return response()->json($user);
-
-        
-        }
-
-        public function ubahPassword(Request $request)
-        {
-
-            $validator = Validator::make($request->all(), [
-                'new_password' => ['required', Rules\Password::defaults()],
-                'username' => self::RULE_REQUIRED_STRING,
-            ]);
-        
-            // Check if validation fails
-            if ($validator->fails()) {
-                return response()->json(['errors' => $validator->errors()], 422);
-            }
-
-            $user = User::where('username',$request->input('username'))->first();
-            
-            if (!$user) {
-                return response()->json(['message' => 'User not found'], 404);
-
-            }
-            
-            $user->password = Hash::make($request->input('new_password'));
-            $user->save();
-
-            return response()->json(['message' => 'Password updated successfully','user' => $user]);
-        }
-
-
+        $result = $this->adminService->deletePemerintah($id);
+        $code = isset($result['error']) ? 404 : 200;
+        return response()->json($result, $code);
     }
+
+    /**
+     * Search a Masyarakat by phone.
+     */
+    public function searchMasyarakatByPhone(Request $request)
+    {
+        $search = $request->input('search');
+        $result = $this->adminService->findMasyarakatByPhone($search);
+        $code = isset($result['error']) ? 404 : 200;
+        return response()->json($result, $code);
+    }
+
+    /**
+     * Update password for a user.
+     */
+    public function ubahPassword(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'new_password' => ['required', Rules\Password::defaults()],
+            'username'     => self::RULE_REQUIRED_STRING,
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $result = $this->adminService->ubahPassword($request->input('username'), $request->input('new_password'));
+        $code = isset($result['error']) ? 404 : 200;
+        return response()->json($result, $code);
+    }
+}
