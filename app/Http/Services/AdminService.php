@@ -5,7 +5,6 @@ namespace App\Http\Services;
 use App\Models\Pemerintah;
 use App\Models\Masyarakat;
 use App\Models\User;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use App\Http\Traits\ImageUploadTrait;
 
