@@ -27,7 +27,7 @@ class ReportFactory extends Factory
     {
         return [
             'judul' => $this->faker->sentence,
-            'deskripsi' => $this->faker->paragraph,
+            'deskripsi' => $this->faker->paragraph(2),
             'lokasi' => $this->faker->address,
             'foto' => $this->faker->imageUrl(),
             'status' => json_encode(['open']),
