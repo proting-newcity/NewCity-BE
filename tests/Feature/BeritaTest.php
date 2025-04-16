@@ -7,6 +7,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use App\Models\Admin;
+use App\Models\User;
 use App\Models\Berita;
 use App\Models\KategoriBerita;
 
@@ -56,8 +57,8 @@ class BeritaTest extends TestCase
 
     public function testStoreBeritaValidationError()
     {
-        $user = \App\Models\User::factory()->create();
-        $admin = \App\Models\Admin::factory()->create([
+        $user = User::factory()->create();
+        $admin = Admin::factory()->create([
             'id' => $user->id
         ]);
 
@@ -70,8 +71,8 @@ class BeritaTest extends TestCase
 
     public function testStoreBeritaSuccess()
     {
-        $user = \App\Models\User::factory()->create();
-        $admin = \App\Models\Admin::factory()->create([
+        $user = User::factory()->create();
+        $admin = Admin::factory()->create([
             'id' => $user->id
         ]);
 
@@ -95,15 +96,15 @@ class BeritaTest extends TestCase
 
     public function testUpdateBeritaNotFound()
     {
-        $user = \App\Models\User::factory()->create();
-        $admin = \App\Models\Admin::factory()->create([
+        $user = User::factory()->create();
+        $admin = Admin::factory()->create([
             'id' => $user->id
         ]);
 
         $this->actingAs($user, 'sanctum');
 
 
-        $response = $this->putJson('/api/berita/999', [
+        $response = $this->postJson('/api/berita/999', [
             'title' => 'Updated Title',
         ]);
 
@@ -112,8 +113,8 @@ class BeritaTest extends TestCase
 
     public function testDestroyBeritaSuccess()
     {
-        $user = \App\Models\User::factory()->create();
-        $admin = \App\Models\Admin::factory()->create([
+        $user = User::factory()->create();
+        $admin = Admin::factory()->create([
             'id' => $user->id
         ]);
 
@@ -139,8 +140,8 @@ class BeritaTest extends TestCase
 
     public function testLikeBerita()
     {
-        $user = \App\Models\User::factory()->create();
-        $admin = \App\Models\Admin::factory()->create([
+        $user = User::factory()->create();
+        $admin = Admin::factory()->create([
             'id' => $user->id
         ]);
 
