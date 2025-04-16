@@ -8,11 +8,9 @@ use App\Models\Diskusi;
 use App\Models\Report;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Traits\ImageUploadTrait;
-
 class ReportService
 {
     use ImageUploadTrait;
-
     /**
      * Retrieve paginated reports with related masyarakat user.
      */
@@ -42,16 +40,6 @@ class ReportService
             return false;
         });
         return array_values($reports->toArray());
-    }
-
-    /**
-     * Check if the current user has the required role.
-     */
-    public function checkUserRole(string $role)
-    {
-        $user = Auth::user();
-        // Depending on your implementation, this method can check a role field, or use Laravel Gates or Policies.
-        return $user && $user->role === $role;
     }
 
     /**
@@ -144,7 +132,6 @@ class ReportService
         ];
         $description = $statusMapping[$newStatus] ?? 'Status tidak diketahui';
 
-        // Add new status entry
         $statusEntry = [
             'status' => $newStatus,
             'deskripsi' => $description,
@@ -201,7 +188,6 @@ class ReportService
         if (!$report) {
             return ['error' => 'Report not found', 'error_code' => 404];
         }
-        // Assume checkOwner compares the current user id with the report's masyarakat id.
         if ($report->masyarakat->id !== auth()->id()) {
             return ['error' => 'You are not authorized!', 'error_code' => 401];
         }

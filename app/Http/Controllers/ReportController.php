@@ -9,10 +9,6 @@ use Illuminate\Support\Facades\Validator;
 
 class ReportController extends Controller
 {
-    private const ERROR_REPORT_NOT_FOUND = 'Report not found';
-    private const ERROR_UNAUTHORIZED = 'You are not authorized!';
-    private const RULE_REQUIRED_STRING = 'required|string';
-
     protected $reportService;
 
     public function __construct(ReportService $reportService)
@@ -58,7 +54,7 @@ class ReportController extends Controller
             return response()->json($validator->errors(), 422);
         }
         
-        if (!$this->reportService->checkUserRole('masyarakat')) {
+        if (!$this->checkRole('masyarakat')) {
             return response()->json(['error' => 'You are not authorized!'], 401);
         }
 
