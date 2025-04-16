@@ -2,81 +2,86 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Institusi;
+
+use App\Http\Services\InstitusiService;
+
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
 class InstitusiController extends Controller
 {
+    protected $institusiService;
     private const INSTITUSI_NOT_FOUND = 'Institusi not found';
-    // GET: api/institusi
+
+    public function __construct(InstitusiService $institusiService)
+    {
+        $this->institusiService = $institusiService;
+    }
+
+    /**
+     * Display a listing of all institusi.
+     */
     public function index()
     {
-        $institusis = Institusi::all();
-        return response()->json($institusis);
+        $institusis = $this->institusiService->getAll();
+        return response()->json($institusis, 200);
     }
 
-    // GET: api/institusi/{id}
+    /**
+     * Display the specified institusi.
+     */
     public function show($id)
     {
-        $institusi = Institusi::find($id);
-
+        $institusi = $this->institusiService->findById($id);
         if (!$institusi) {
-            return response()->json(['message' => self::INSTITUSI_NOT_FOUND], Response::HTTP_NOT_FOUND);
+            return response()->json(['message' => self::INSTITUSI_NOT_FOUND], 404);
         }
 
-        return response()->json($institusi);
+        return response()->json($institusi, 200);
     }
 
-    // POST: api/institusi
+    /**
+     * Store a newly created institusi.
+     */
     public function store(Request $request)
     {
-        $request->validate([
+        $validatedData = $request->validate([
             'name' => 'required|string|max:255',
         ]);
 
-        $institusi = Institusi::create([
-            'name' => $request->name,
-        ]);
-
-        return response()->json($institusi, Response::HTTP_CREATED);
+        $institusi = $this->institusiService->create($validatedData);
+        return response()->json($institusi, 201);
     }
 
-    // PUT/PATCH: api/institusi/{id}
+    /**
+     * Update the specified institusi.
+     */
     public function update(Request $request, $id)
     {
-        $institusi = Institusi::find($id);
-
+        $institusi = $this->institusiService->findById($id);
         if (!$institusi) {
-            return response()->json(['message' => self::INSTITUSI_NOT_FOUND], Response::HTTP_NOT_FOUND);
+            return response()->json(['message' => self::INSTITUSI_NOT_FOUND], 404);
         }
 
-        // Validate the incoming request
-        $request->validate([
+        $validatedData = $request->validate([
             'name' => 'nullable|string|max:255',
         ]);
 
-        // Update the attributes
-        if ($request->has('name')) {
-            $institusi->name = $request->name;
-        }
-
-        $institusi->save();
-
-        return response()->json($institusi);
+        $institusi = $this->institusiService->update($id, $validatedData);
+        return response()->json($institusi, 200);
     }
 
-    // DELETE: api/institusi/{id}
+    /**
+     * Remove the specified institusi.
+     */
     public function destroy($id)
     {
-        $institusi = Institusi::find($id);
-
+        $institusi = $this->institusiService->findById($id);
         if (!$institusi) {
-            return response()->json(['message' => self::INSTITUSI_NOT_FOUND], Response::HTTP_NOT_FOUND);
+            return response()->json(['message' => self::INSTITUSI_NOT_FOUND], 404);
         }
 
-        $institusi->delete();
-
-        return response()->json(['message' => 'Institusi deleted successfully']);
+        $this->institusiService->delete($id);
+        return response()->json(['message' => 'Institusi deleted successfully'], 200);
     }
 }
