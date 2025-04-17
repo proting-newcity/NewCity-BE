@@ -14,6 +14,9 @@ use App\Models\KategoriReport;
 
 class KategoriTest extends TestCase
 {
+    private const PATH_KATEGORI_BERITA = '/api/kategori/berita';
+    private const PATH_KATEGORI_REPORT = '/api/kategori/report';
+
     use RefreshDatabase;
 
     protected function setUp(): void
@@ -27,11 +30,11 @@ class KategoriTest extends TestCase
         KategoriBerita::factory()->create(['name' => 'Berita A']);
         KategoriBerita::factory()->create(['name' => 'Berita B']);
 
-        $response = $this->json('GET', '/api/kategori/berita');
+        $response = $this->json('GET', self::PATH_KATEGORI_BERITA);
 
         $response->assertStatus(Response::HTTP_OK)
-                 ->assertJsonFragment(['name' => 'Berita A'])
-                 ->assertJsonFragment(['name' => 'Berita B']);
+            ->assertJsonFragment(['name' => 'Berita A'])
+            ->assertJsonFragment(['name' => 'Berita B']);
     }
 
     public function testIndexReportReturnsAllKategoriReport()
@@ -39,31 +42,31 @@ class KategoriTest extends TestCase
         KategoriReport::factory()->create(['name' => 'Report X']);
         KategoriReport::factory()->create(['name' => 'Report Y']);
 
-        $response = $this->json('GET', '/api/kategori/report');
+        $response = $this->json('GET', self::PATH_KATEGORI_REPORT);
 
         $response->assertStatus(Response::HTTP_OK)
-                 ->assertJsonFragment(['name' => 'Report X'])
-                 ->assertJsonFragment(['name' => 'Report Y']);
+            ->assertJsonFragment(['name' => 'Report X'])
+            ->assertJsonFragment(['name' => 'Report Y']);
     }
 
     public function testStoreReportValidationFailsWhenNameMissing()
     {
         $user = User::factory()->create();
-        $admin = Admin::factory()->create([
+        Admin::factory()->create([
             'id' => $user->id
         ]);
 
         $this->actingAs($user, 'sanctum');
-        $response = $this->json('POST', '/api/kategori/report', []);
+        $response = $this->json('POST', self::PATH_KATEGORI_REPORT, []);
 
         $response->assertStatus(Response::HTTP_UNPROCESSABLE_ENTITY)
-                 ->assertJsonValidationErrors(['name']);
+            ->assertJsonValidationErrors(['name']);
     }
 
     public function testStoreReportSuccessfullyCreatesKategoriReport()
     {
         $user = User::factory()->create();
-        $admin = Admin::factory()->create([
+        Admin::factory()->create([
             'id' => $user->id
         ]);
 
@@ -71,10 +74,10 @@ class KategoriTest extends TestCase
 
         $postData = ['name' => 'New Report'];
 
-        $response = $this->json('POST', '/api/kategori/report', $postData);
+        $response = $this->json('POST', self::PATH_KATEGORI_REPORT, $postData);
 
         $response->assertStatus(Response::HTTP_CREATED)
-                 ->assertJsonFragment(['name' => 'New Report']);
+            ->assertJsonFragment(['name' => 'New Report']);
 
         $this->assertDatabaseHas('kategori_report', $postData);
     }
@@ -82,22 +85,22 @@ class KategoriTest extends TestCase
     public function testStoreBeritaValidationFailsWhenFieldsMissing()
     {
         $user = User::factory()->create();
-        $admin = Admin::factory()->create([
+        Admin::factory()->create([
             'id' => $user->id
         ]);
 
         $this->actingAs($user, 'sanctum');
 
-        $response = $this->json('POST', '/api/kategori/berita', []);
+        $response = $this->json('POST', self::PATH_KATEGORI_BERITA, []);
 
         $response->assertStatus(Response::HTTP_UNPROCESSABLE_ENTITY)
-                 ->assertJsonValidationErrors(['name', 'foto']);
+            ->assertJsonValidationErrors(['name', 'foto']);
     }
 
     public function testStoreBeritaSuccessfullyCreatesKategoriBerita()
     {
         $user = User::factory()->create();
-        $admin = Admin::factory()->create([
+        Admin::factory()->create([
             'id' => $user->id
         ]);
 
@@ -110,15 +113,15 @@ class KategoriTest extends TestCase
         $file = UploadedFile::fake()->image('kategori.jpg');
 
         $postData = [
-            'name' => 'Berita Keren',
+            'name' => 'BeritaKeren',
             'foto' => $file,
         ];
 
-        $response = $this->postJson('/api/kategori/berita', $postData);
+        $response = $this->postJson(self::PATH_KATEGORI_BERITA, $postData);
 
         $response->assertStatus(Response::HTTP_CREATED)
-                 ->assertJsonFragment(['name' => 'Berita Keren']);
+            ->assertJsonFragment(['name' => 'BeritaKeren']);
 
-        $this->assertDatabaseHas('kategori_berita', ['name' => 'Berita Keren']);
+        $this->assertDatabaseHas('kategori_berita', ['name' => 'BeritaKeren']);
     }
 }

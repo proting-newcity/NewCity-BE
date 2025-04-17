@@ -16,6 +16,10 @@ use App\Http\Controllers\AdminController;
 
 class AdminTest extends TestCase
 {
+    private const PATH_STORE = '/store-pemerintah';
+    private const PATH_UPDATE = '/update-pemerintah';
+    private const PATH_UBAH_PASSWORD = '/ubah-password';
+
     use RefreshDatabase;
 
     /**
@@ -45,12 +49,12 @@ class AdminTest extends TestCase
         $controller = $this->getControllerMock();
         $controller->method('checkRole')->with("admin")->willReturn(false);
 
-        $request = Request::create('/store-pemerintah', 'POST', [
-            'name'     => 'John Doe',
+        $request = Request::create(self::PATH_STORE, 'POST', [
+            'name' => 'John Doe',
             'username' => 'johndoe',
-            'phone'    => '123456789',
+            'phone' => '123456789',
             'password' => 'Password1',
-            'status'   => true,
+            'status' => true,
         ]);
 
         $response = $controller->storePemerintah($request);
@@ -67,11 +71,11 @@ class AdminTest extends TestCase
         $controller = $this->getControllerMock();
         $controller->method('checkRole')->with("admin")->willReturn(true);
 
-        $request = Request::create('/store-pemerintah', 'POST', [
-            'name'     => 'John Doe',
+        $request = Request::create(self::PATH_STORE, 'POST', [
+            'name' => 'John',
             'username' => 'johndoe',
-            'phone'    => '123456789',
-            'status'   => true,
+            'phone' => '12345678',
+            'status' => true,
         ]);
 
         $response = $controller->storePemerintah($request);
@@ -93,14 +97,14 @@ class AdminTest extends TestCase
 
         $file = UploadedFile::fake()->image('foto.jpg');
 
-        $institusi = Institusi::factory()->create(['name' => 'Test Institusi', 'id' => 1]);
+        Institusi::factory()->create(['name' => 'Test Institusi', 'id' => 1]);
 
-        $request = Request::create('/store-pemerintah', 'POST', [
-            'name'       => 'John Doe',
-            'username'   => 'johndoe',
-            'phone'      => '123456789',
-            'password'   => $password,
-            'status'     => true,
+        $request = Request::create(self::PATH_STORE, 'POST', [
+            'name' => 'John Doe',
+            'username' => 'johndoe',
+            'phone' => '12356789',
+            'password' => $password,
+            'status' => true,
             'institusi_id' => 1,
         ], [], ['foto' => $file]);
 
@@ -116,7 +120,7 @@ class AdminTest extends TestCase
         // Check the associated Pemerintah record.
         $pemerintah = Pemerintah::find($user->id);
         $this->assertNotNull($pemerintah);
-        $this->assertEquals('123456789', $pemerintah->phone);
+        $this->assertEquals('12356789', $pemerintah->phone);
 
         // Assert that the Registered event was dispatched.
         Event::assertDispatched(Registered::class);
@@ -129,7 +133,7 @@ class AdminTest extends TestCase
     {
         $controller = $this->getControllerMock();
 
-        $request = Request::create('/update-pemerintah', 'POST', [
+        $request = Request::create(self::PATH_UPDATE, 'POST', [
             'username' => str_repeat('a', 300),
         ]);
         $response = $controller->updatePemerintah($request, 1);
@@ -143,7 +147,7 @@ class AdminTest extends TestCase
     {
         $controller = $this->getControllerMock();
 
-        $request = Request::create('/update-pemerintah', 'POST', []);
+        $request = Request::create(self::PATH_UPDATE, 'POST', []);
         $response = $controller->updatePemerintah($request, 999); // non-existent ID
         $this->assertEquals(404, $response->getStatusCode());
         $data = json_decode($response->getContent(), true);
@@ -155,18 +159,18 @@ class AdminTest extends TestCase
      */
     public function testUpdatePemerintahSuccess()
     {
-        $institusi = Institusi::factory()->create(['name' => 'Test Institusi', 'id' => 1]);
+        Institusi::factory()->create(['name' => 'Test Institusi', 'id' => 1]);
         $password = 'Password1';
         $user = User::create([
-            'name'     => 'Old Name',
+            'name' => 'Old Name',
             'username' => 'oldusername',
             'password' => Hash::make($password),
-            'foto'     => 'old/path.jpg',
+            'foto' => 'old/path.jpg',
         ]);
-        $pemerintah = Pemerintah::create([
-            'id'           => $user->id,
-            'status'       => false,
-            'phone'        => '0000000',
+        Pemerintah::create([
+            'id' => $user->id,
+            'status' => false,
+            'phone' => '0000000',
             'institusi_id' => 1,
         ]);
 
@@ -177,14 +181,14 @@ class AdminTest extends TestCase
 
         $newPassword = 'NewPassword1';
         $newData = [
-            'name'     => 'New Name',
+            'name' => 'New Name',
             'username' => 'newusername',
-            'phone'    => '9999999',
+            'phone' => '9999999',
             'password' => $newPassword,
-            'status'   => true,
+            'status' => true,
         ];
         $file = UploadedFile::fake()->image('newfoto.jpg');
-        $request = Request::create('/update-pemerintah', 'POST', $newData, [], ['foto' => $file]);
+        $request = Request::create(self::PATH_UPDATE, 'POST', $newData, [], ['foto' => $file]);
 
         $response = $controller->updatePemerintah($request, $user->id);
         $this->assertEquals(200, $response->getStatusCode());
@@ -211,8 +215,8 @@ class AdminTest extends TestCase
     {
         $controller = $this->getControllerMock();
 
-        $request = Request::create('/ubah-password', 'POST', [
-            'username'     => '',
+        $request = Request::create(self::PATH_UBAH_PASSWORD, 'POST', [
+            'username' => '',
             'new_password' => ''
         ]);
         $response = $controller->ubahPassword($request);
@@ -226,8 +230,8 @@ class AdminTest extends TestCase
     {
         $controller = $this->getControllerMock();
 
-        $request = Request::create('/ubah-password', 'POST', [
-            'username'     => 'nonexistent',
+        $request = Request::create(self::PATH_UBAH_PASSWORD, 'POST', [
+            'username' => 'nonexistent',
             'new_password' => 'Password1'
         ]);
         $response = $controller->ubahPassword($request);
@@ -244,7 +248,7 @@ class AdminTest extends TestCase
     {
         $password = 'Password1';
         $user = User::create([
-            'name'     => 'Test User',
+            'name' => 'Test User',
             'username' => 'testuser',
             'password' => Hash::make($password),
         ]);
@@ -252,8 +256,8 @@ class AdminTest extends TestCase
         $controller = $this->getControllerMock();
 
         $newPassword = 'NewPassword1';
-        $request = Request::create('/ubah-password', 'POST', [
-            'username'     => 'testuser',
+        $request = Request::create(self::PATH_UBAH_PASSWORD, 'POST', [
+            'username' => 'testuser',
             'new_password' => $newPassword,
         ]);
 

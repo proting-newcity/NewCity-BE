@@ -42,7 +42,7 @@ class RegisteredUserController extends Controller
         $fotoPath = null;
 
         if ($request->hasFile('foto') && $request->file('foto')->isValid()) {
-            $fotoPath= $this->uploadImage($request->file('foto'), public_path('users'));
+            $fotoPath= $this->uploadImage($request->file('foto'), 'users');
         }
 
         $user = User::create([

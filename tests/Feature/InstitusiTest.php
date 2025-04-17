@@ -9,6 +9,9 @@ use App\Models\Institusi;
 
 class InstitusiTest extends TestCase
 {
+    private const PATH_INSTITUSI = '/api/institusi/';
+    private const MSG_NOT_FOUND = 'Institusi not found';
+
     use RefreshDatabase;
 
     /**
@@ -17,11 +20,11 @@ class InstitusiTest extends TestCase
     public function testIndexReturnsAllInstitusis()
     {
         // Create sample institusis using factory.
-        $institusi1 = Institusi::factory()->create(['name' => 'Test Institusi 1']);
-        $institusi2 = Institusi::factory()->create(['name' => 'Test Institusi 2']);
+        Institusi::factory()->create(['name' => 'Test Institusi 1']);
+        Institusi::factory()->create(['name' => 'Test Institusi 2']);
 
         // When a GET request is made to the index endpoint.
-        $response = $this->json('GET', '/api/institusi');
+        $response = $this->json('GET', self::PATH_INSTITUSI);
 
         // Then the response status should be 200 OK and contain both institusis.
         $response->assertStatus(Response::HTTP_OK)
@@ -36,7 +39,7 @@ class InstitusiTest extends TestCase
     {
         $institusi = Institusi::factory()->create(['name' => 'Test Institusi']);
 
-        $response = $this->json('GET', '/api/institusi/'.$institusi->id);
+        $response = $this->json('GET', self::PATH_INSTITUSI.$institusi->id);
 
         $response->assertStatus(Response::HTTP_OK)
             ->assertJsonFragment(['name' => 'Test Institusi']);
@@ -48,10 +51,10 @@ class InstitusiTest extends TestCase
     public function testShowReturnsNotFoundWhenInstitusiNotFound()
     {
         $nonExistentId = 9999;
-        $response = $this->json('GET', '/api/institusi/'.$nonExistentId);
+        $response = $this->json('GET', self::PATH_INSTITUSI.$nonExistentId);
 
         $response->assertStatus(Response::HTTP_NOT_FOUND)
-            ->assertJson(['message' => 'Institusi not found']);
+            ->assertJson(['message' => self::MSG_NOT_FOUND]);
     }
 
     /**
@@ -63,7 +66,7 @@ class InstitusiTest extends TestCase
             'name' => 'New Institusi'
         ];
 
-        $response = $this->json('POST', '/api/institusi', $postData);
+        $response = $this->json('POST', self::PATH_INSTITUSI, $postData);
 
         $response->assertStatus(Response::HTTP_CREATED)
             ->assertJsonFragment(['name' => 'New Institusi']);
@@ -78,7 +81,7 @@ class InstitusiTest extends TestCase
     public function testStoreValidationFailsWhenNameMissing()
     {
         // Missing the "name" field.
-        $response = $this->json('POST', '/api/institusi', []);
+        $response = $this->json('POST', self::PATH_INSTITUSI, []);
         $response->assertStatus(Response::HTTP_UNPROCESSABLE_ENTITY)
             ->assertJsonValidationErrors(['name']);
     }
@@ -89,16 +92,16 @@ class InstitusiTest extends TestCase
     public function testUpdateUpdatesExistingInstitusi()
     {
         $institusi = Institusi::factory()->create(['name' => 'Old Name']);
-        $updateData = ['name' => 'Updated Name'];
+        $updateData = ['name' => 'UpdatedName'];
 
-        $response = $this->json('PUT', '/api/institusi/'.$institusi->id, $updateData);
+        $response = $this->json('PUT', self::PATH_INSTITUSI.$institusi->id, $updateData);
 
         $response->assertStatus(Response::HTTP_OK)
-            ->assertJsonFragment(['name' => 'Updated Name']);
+            ->assertJsonFragment(['name' => 'UpdatedName']);
 
         $this->assertDatabaseHas('institusi', [
             'id'   => $institusi->id,
-            'name' => 'Updated Name'
+            'name' => 'UpdatedName'
         ]);
     }
 
@@ -110,10 +113,10 @@ class InstitusiTest extends TestCase
         $nonExistentId = 9999;
         $updateData = ['name' => 'Updated Name'];
 
-        $response = $this->json('PUT', '/api/institusi/'.$nonExistentId, $updateData);
+        $response = $this->json('PUT', self::PATH_INSTITUSI.$nonExistentId, $updateData);
 
         $response->assertStatus(Response::HTTP_NOT_FOUND)
-            ->assertJson(['message' => 'Institusi not found']);
+            ->assertJson(['message' => self::MSG_NOT_FOUND]);
     }
 
     /**
@@ -125,7 +128,7 @@ class InstitusiTest extends TestCase
         // Providing a name that is too long.
         $updateData = ['name' => str_repeat('a', 300)];
 
-        $response = $this->json('PUT', '/api/institusi/'.$institusi->id, $updateData);
+        $response = $this->json('PUT', self::PATH_INSTITUSI.$institusi->id, $updateData);
 
         $response->assertStatus(Response::HTTP_UNPROCESSABLE_ENTITY)
             ->assertJsonValidationErrors(['name']);
@@ -138,7 +141,7 @@ class InstitusiTest extends TestCase
     {
         $institusi = Institusi::factory()->create();
 
-        $response = $this->json('DELETE', '/api/institusi/'.$institusi->id);
+        $response = $this->json('DELETE', self::PATH_INSTITUSI.$institusi->id);
 
         $response->assertStatus(Response::HTTP_OK)
             ->assertJson(['message' => 'Institusi deleted successfully']);
@@ -152,9 +155,9 @@ class InstitusiTest extends TestCase
     public function testDestroyReturnsNotFoundWhenInstitusiNotFound()
     {
         $nonExistentId = 9999;
-        $response = $this->json('DELETE', '/api/institusi/'.$nonExistentId);
+        $response = $this->json('DELETE', self::PATH_INSTITUSI.$nonExistentId);
 
         $response->assertStatus(Response::HTTP_NOT_FOUND)
-            ->assertJson(['message' => 'Institusi not found']);
+            ->assertJson(['message' => self::MSG_NOT_FOUND]);
     }
 }

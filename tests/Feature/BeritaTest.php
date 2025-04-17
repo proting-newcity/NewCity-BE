@@ -13,6 +13,8 @@ use App\Models\KategoriBerita;
 
 class BeritaTest extends TestCase
 {
+    private const PATH_BERITA = '/api/berita';
+
     use RefreshDatabase;
 
     protected function setUp(): void
@@ -30,7 +32,7 @@ class BeritaTest extends TestCase
             'id_user' => $user->id,
         ]);
 
-        $response = $this->getJson('/api/berita');
+        $response = $this->getJson(self::PATH_BERITA);
         $response->assertStatus(200)
             ->assertJsonStructure(['data', 'links']);
     }
@@ -58,21 +60,21 @@ class BeritaTest extends TestCase
     public function testStoreBeritaValidationError()
     {
         $user = User::factory()->create();
-        $admin = Admin::factory()->create([
+        Admin::factory()->create([
             'id' => $user->id
         ]);
 
         $this->actingAs($user, 'sanctum');
 
 
-        $response = $this->postJson('/api/berita', []);
+        $response = $this->postJson(self::PATH_BERITA, []);
         $response->assertStatus(422);
     }
 
     public function testStoreBeritaSuccess()
     {
         $user = User::factory()->create();
-        $admin = Admin::factory()->create([
+        Admin::factory()->create([
             'id' => $user->id
         ]);
 
@@ -82,7 +84,7 @@ class BeritaTest extends TestCase
         $kategori = KategoriBerita::factory()->create();
         $file = UploadedFile::fake()->image('berita.jpg');
 
-        $response = $this->postJson('/api/berita', [
+        $response = $this->postJson(self::PATH_BERITA, [
             'title' => 'Berita Test',
             'content' => 'Berita Content',
             'status' => 'published',
@@ -97,7 +99,7 @@ class BeritaTest extends TestCase
     public function testUpdateBeritaNotFound()
     {
         $user = User::factory()->create();
-        $admin = Admin::factory()->create([
+        Admin::factory()->create([
             'id' => $user->id
         ]);
 
@@ -114,7 +116,7 @@ class BeritaTest extends TestCase
     public function testDestroyBeritaSuccess()
     {
         $user = User::factory()->create();
-        $admin = Admin::factory()->create([
+        Admin::factory()->create([
             'id' => $user->id
         ]);
 
@@ -141,7 +143,7 @@ class BeritaTest extends TestCase
     public function testLikeBerita()
     {
         $user = User::factory()->create();
-        $admin = Admin::factory()->create([
+        Admin::factory()->create([
             'id' => $user->id
         ]);
 

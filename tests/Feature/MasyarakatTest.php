@@ -13,13 +13,14 @@ use Tests\TestCase;
 
 class MasyarakatTest extends TestCase
 {
+    private const PATH_NOTIFICATION = '/api/notification';
     use RefreshDatabase;
 
     public function testNotificationUnauthorizedUser()
     {
         $user = User::factory()->create(); // Non-masyarakat user
 
-        $response = $this->actingAs($user)->json('GET', '/api/notification');
+        $response = $this->actingAs($user)->json('GET', self::PATH_NOTIFICATION);
 
         $response->assertStatus(Response::HTTP_UNAUTHORIZED)
             ->assertJson(['error' => 'You are not authorized!']);
@@ -33,7 +34,7 @@ class MasyarakatTest extends TestCase
 
         $this->actingAs($masyarakatUser, 'sanctum');
 
-        $response = $this->json('GET', '/api/notification');
+        $response = $this->json('GET', self::PATH_NOTIFICATION);
 
         $response->assertStatus(Response::HTTP_OK)
             ->assertJsonStructure([
@@ -59,7 +60,7 @@ class MasyarakatTest extends TestCase
 
         $this->actingAs($masyarakatUser, 'sanctum');
 
-        $response = $this->json('GET', '/api/notification');
+        $response = $this->json('GET', self::PATH_NOTIFICATION);
 
         $response->assertStatus(Response::HTTP_OK)
             ->assertJson([
@@ -81,20 +82,20 @@ class MasyarakatTest extends TestCase
         // Create dummy diskusi and rating reports (bisa dari user lain atau user itu sendiri)
         $otherUser = User::factory()->create();
 
-        $diskusi = Diskusi::factory()->create([
+        Diskusi::factory()->create([
             'content' => 'This is a diskusi content',
             'id_report' => $report->id,
             'id_user' => $otherUser->id
         ]);
 
-        $RatingReport = RatingReport::factory()->create([
+        RatingReport::factory()->create([
             'id_report' => $report->id,
             'id_user' => $otherUser->id
         ]);
 
         $this->actingAs($masyarakatUser);
 
-        $response = $this->json('GET', '/api/notification');
+        $response = $this->json('GET', self::PATH_NOTIFICATION);
 
         $response->assertStatus(Response::HTTP_OK)
             ->assertJsonCount(2, 'data')
