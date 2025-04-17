@@ -27,7 +27,6 @@ class MasyarakatService
         $total = $combined->count();
         $slice = $combined->forPage($page, $perPage)->values();
 
-
         return new LengthAwarePaginator(
             NotificationResource::collection($slice),
             $total,
