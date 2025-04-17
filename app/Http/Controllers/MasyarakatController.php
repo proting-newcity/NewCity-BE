@@ -3,56 +3,29 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Pagination\LengthAwarePaginator;
+use App\Http\Requests\Masyarakat\NotificationRequest;
+use App\Services\MasyarakatService;
+use App\Http\Traits\ApiResponseTrait;
 
 
 class MasyarakatController extends Controller
 {
-    public function notification(Request $request)
-    {
-        $user = auth()->user();
-    
-        if (!$this->checkRole("masyarakat")) {
-            return response()->json(['error' => 'You are not authorized!'], 401);
-        }
-    
-        $masyarakat = $user->masyarakat;
-        $diskusi = $masyarakat->diskusi ? $masyarakat->diskusi()->get()->map(function ($item) {
-            return [
-                'foto_profile' => $item->user->foto ?? null,
-                'name' => $item->user->name ?? 'Unknown User',
-                'type' => 'diskusi',
-                'content' => $item->content,
-                'foto' => $item->report->foto ?? null,
-                'tanggal' => $item->tanggal,
-                'id_report' => $item->id_report,
-            ];
-        }) : collect();
-        
-        $likes = $masyarakat->likes ? $masyarakat->likes()->get()->map(function ($item) {
-            return [
-                'foto_profile' => $item->user->foto ?? null,
-                'name' => $item->user->name ?? 'Unknown User',
-                'type' => 'like',
-                'content' => 'Liked a report',
-                'foto' => $item->report->foto ?? null,
-                'tanggal' => $item->tanggal,
-                'id_report' => $item->id_report,
-            ];
-        }) : collect();
+    use ApiResponseTrait;
 
-        $combined = $diskusi->merge($likes)->sortByDesc('tanggal')->values();
-        $perPage = 10;
-        $page = $request->input('page', 1);
-        $total = $combined->count();
-        $paginated = new LengthAwarePaginator(
-            $combined->forPage($page, $perPage)->values(),
-            $total,
-            $perPage,
-            $page,
-            ['path' => $request->url(), 'query' => $request->query()]
-        );
-    
-        return response()->json($paginated);
+    public function __construct(protected MasyarakatService $notifications)
+    {
+    }
+
+    public function notification(NotificationRequest $request)
+    {
+        // Masyarakat instance via relationship
+        $masyarakat = $request->user()->masyarakat;
+
+        $page    = $request->input('page', 1);
+        $perPage = $request->input('per_page', 10);
+
+        $result = $this->notifications->getNotifications($masyarakat, $perPage, $page);
+
+        return $this->success($result);
     }
 }
