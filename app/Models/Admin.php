@@ -18,6 +18,8 @@ class Admin extends Model
     // Disable automatic timestamps if the table doesn't have created_at/updated_at columns
     public $timestamps = false;
 
+    public $incrementing = false;
+
     // Define the attributes that can be mass assigned
     protected $fillable = [
         'id',
