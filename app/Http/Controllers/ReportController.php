@@ -13,11 +13,9 @@ use App\Http\Traits\ApiResponseTrait;
 class ReportController extends Controller
 {
     use ApiResponseTrait;
-    protected $reportService;
 
-    public function __construct(ReportService $reportService)
+    public function __construct(protected ReportService $reportService)
     {
-        $this->reportService = $reportService;
     }
 
     /**

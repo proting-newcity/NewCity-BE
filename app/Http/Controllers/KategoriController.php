@@ -2,81 +2,57 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
+use App\Http\Requests\Kategori\StoreBeritaCategoryRequest;
+use App\Http\Requests\Kategori\StoreReportCategoryRequest;
 
 use App\Http\Services\KategoriService;
+use App\Http\Traits\ApiResponseTrait;
 
 class KategoriController extends Controller
 {
-    protected $kategoriService;
-
-    public function __construct(KategoriService $kategoriService)
+    use ApiResponseTrait;
+    public function __construct(protected KategoriService $kategoriService)
     {
-        $this->kategoriService = $kategoriService;
     }
 
     /**
-     * Display a listing of the resource.
+     * Display report categories.
      */
     public function indexReport()
     {
-        $kategoriReports = $this->kategoriService->getAllReportCategories();
-        return response()->json($kategoriReports, 200);
+        $data = $this->kategoriService->getAllReportCategories();
+        return $this->success($data);
     }
 
     /**
-     * Display a listing of berita categories.
+     * Display berita categories.
      */
     public function indexBerita()
     {
-        $kategoriBerita = $this->kategoriService->getAllBeritaCategories();
-        return response()->json($kategoriBerita, 200);
+        $data = $this->kategoriService->getAllBeritaCategories();
+        return $this->success($data);
     }
 
     /**
-     * Store a newly created report category.
+     * Store a new report category.
      */
-    public function storeReport(Request $request)
+    public function storeReport(StoreReportCategoryRequest $request)
     {
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:50',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
-        }
-
-        if (!$this->checkRole("admin")) {
-            return response()->json(['error' => 'You are not authorized!'], 401);
-        }
-
-        $kategoriReport = $this->kategoriService->createReportCategory([
-            'name' => $request->name,
-        ]);
-
-        return response()->json($kategoriReport, 201);
+        $category = $this->kategoriService->createReportCategory(
+            $request->validated()
+        );
+        return $this->success($category, 201);
     }
 
-    public function storeBerita(Request $request)
+    /**
+     * Store a new berita category.
+     */
+    public function storeBerita(StoreBeritaCategoryRequest $request)
     {
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:100',
-            'foto' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
-        }
-
-        if (!$this->checkRole("admin")) {
-            return response()->json(['error' => 'You are not authorized!'], 401);
-        }
-
-        $kategoriBerita = $this->kategoriService->createBeritaCategory([
-            'name' => $request->name,
-        ], $request->file('foto'));
-
-        return response()->json($kategoriBerita, 201);
+        $category = $this->kategoriService->createBeritaCategory(
+            $request->validated(),
+            $request->file('foto')
+        );
+        return $this->success($category, 201);
     }
 }
