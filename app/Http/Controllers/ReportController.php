@@ -2,26 +2,31 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Services\ReportService;
-
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
+use App\Http\Services\ReportService;
+use App\Http\Requests\Report\StoreReportRequest;
+use App\Http\Requests\Report\UpdateReportRequest;
+use App\Http\Requests\Report\AddStatusRequest;
+use App\Http\Requests\Report\DiskusiStoreRequest;
+use App\Traits\ApiResponseTrait;
 
 class ReportController extends Controller
 {
+    use ApiResponseTrait;
     protected $reportService;
 
     public function __construct(ReportService $reportService)
     {
         $this->reportService = $reportService;
     }
-    
+
     /**
      * Display paginated reports
      */
     public function index()
     {
-        return response()->json($this->reportService->getPaginatedReports(), 200);
+        $data = $this->reportService->getPaginatedReports();
+        return $this->success($data);
     }
 
     /**
@@ -30,37 +35,22 @@ class ReportController extends Controller
     public function indexAdmin()
     {
         $reports = $this->reportService->getReportsForAdmin();
-
         if (empty($reports)) {
-            return response()->json(['message' => 'No reports found for this status'], 404);
+            return $this->error('No reports found for this status', 404);
         }
-        return response()->json($reports, 200);
+        return $this->success($reports);
     }
 
     /**
      * Store a newly created report.
      */
-    public function store(Request $request)
+    public function store(StoreReportRequest $request)
     {
-        $validator = Validator::make($request->all(), [
-            'judul'        => 'required|string|max:100',
-            'deskripsi'    => 'required|string',
-            'lokasi'       => 'required|string',
-            'foto'         => 'required|image|mimes:jpeg,png,jpg,gif',
-            'id_pemerintah'=> 'nullable|exists:pemerintah,id',
-            'id_kategori'  => 'required|exists:kategori_report,id',
-        ]);
-        if ($validator->fails()){
-            return response()->json($validator->errors(), 422);
-        }
-        
-        if (!$this->checkRole('masyarakat')) {
-            return response()->json(['error' => 'You are not authorized!'], 401);
-        }
-
-        $report = $this->reportService->createReport($request->all(), $request->file('foto'));
-
-        return response()->json($report, 201);
+        $report = $this->reportService->createReport(
+            $request->validated(),
+            $request->file('foto')
+        );
+        return $this->success($report, 201);
     }
 
     /**
@@ -68,7 +58,8 @@ class ReportController extends Controller
      */
     public function getByCategory($categoryId)
     {
-        return response()->json($this->reportService->getReportsByCondition(['id_kategori' => $categoryId]), 200);
+        $data = $this->reportService->getReportsByCondition(['id_kategori' => $categoryId]);
+        return $this->success($data);
     }
 
     /**
@@ -78,9 +69,9 @@ class ReportController extends Controller
     {
         $reports = $this->reportService->getReportsByStatus($status);
         if (empty($reports)) {
-            return response()->json(['message' => 'No reports found for this status'], 404);
+            return $this->error('No reports found for this status', 404);
         }
-        return response()->json(['data' => $reports], 200);
+        return $this->success(['data' => $reports]);
     }
 
     /**
@@ -88,23 +79,21 @@ class ReportController extends Controller
      */
     public function myReports()
     {
-        $reportData = $this->reportService->getMyReports();
-        if (isset($reportData['error'])) {
-            return response()->json($reportData, 401);
-        }
-        return response()->json($reportData, 200);
+        $result = $this->reportService->getMyReports();
+        return isset($result['error'])
+            ? $this->error($result['error'], 401)
+            : $this->success($result);
     }
-    
+
     /**
      * Update status.
      */
-    public function addStatus(Request $request, $id)
+    public function addStatus(AddStatusRequest $request, $id)
     {
-        $validated = $request->validate([
-            'status' => 'required|string',
-        ]);
-        $result = $this->reportService->addStatus($id, $validated['status']);
-        return response()->json($result, isset($result['error']) ? 404 : 200);
+        $result = $this->reportService->addStatus($id, $request->validated()['status']);
+        return isset($result['error'])
+            ? $this->error($result['error'], 404)
+            : $this->success($result);
     }
 
     /**
@@ -113,10 +102,9 @@ class ReportController extends Controller
     public function show($id)
     {
         $report = $this->reportService->getReportDetails($id);
-        if (isset($report['error'])) {
-            return response()->json(['message' => 'Report not found'], 404);
-        }
-        return response()->json($report, 200);
+        return isset($report['error'])
+            ? $this->error('Report not found', 404)
+            : $this->success($report);
     }
 
     /**
@@ -124,21 +112,19 @@ class ReportController extends Controller
      */
     public function searchReports(Request $request)
     {
-        $searchTerm = $request->input('search');
-        return response()->json($this->reportService->searchReports($searchTerm), 200);
+        $data = $this->reportService->searchReports($request->input('search'));
+        return $this->success($data);
     }
-
 
     /**
      * Update a report.
      */
-    public function update(Request $request, $id)
+    public function update(UpdateReportRequest $request, $id)
     {
-        $report = $this->reportService->updateReport($id, $request->all(), $request->file('foto'));
-        if (isset($report['error'])) {
-            return response()->json($report, $report['error_code'] ?? 400);
-        }
-        return response()->json($report, 200);
+        $report = $this->reportService->updateReport($id, $request->validated(), $request->file('foto'));
+        return isset($report['error'])
+            ? $this->error($report['error'], $report['error_code'] ?? 400)
+            : $this->success($report);
     }
 
     /**
@@ -147,8 +133,9 @@ class ReportController extends Controller
     public function destroy($id)
     {
         $result = $this->reportService->deleteReport($id);
-        $code = isset($result['error']) ? 404 : 200;
-        return response()->json($result, $code);
+        return isset($result['error'])
+            ? $this->error($result['error'], 404)
+            : $this->success($result);
     }
 
     /**
@@ -157,7 +144,7 @@ class ReportController extends Controller
     public function like(Request $request)
     {
         $result = auth()->user()->toggleLikeReport($request->id, false);
-        return response()->json(['success' => $result], 200);
+        return $this->success(['success' => $result]);
     }
 
     /**
@@ -166,30 +153,25 @@ class ReportController extends Controller
     public function bookmark(Request $request)
     {
         $result = auth()->user()->toggleBookmark($request->id, false);
-        return response()->json(['success' => $result], 200);
+        return $this->success(['success' => $result]);
     }
 
     /**
      * Store a new discussion message for a report.
      */
-    public function diskusiStore(Request $request, $id)
+    public function diskusiStore(DiskusiStoreRequest $request, $id)
     {
-        $validator = Validator::make($request->all(), [
-            'content' => 'required|string',
-        ]);
-        if ($validator->fails()){
-            return response()->json($validator->errors(), 422);
-        }
-        $success = auth()->user()->sendDiskusi($id, $request->content);
-        return response()->json(['success' => $success], 200);
+        $result = auth()->user()->sendDiskusi($id, $request->validated()['content']);
+        return $this->success(['success' => $result]);
     }
 
     /**
      * Show all discussion messages for a report.
      */
-    public function diskusiShow($id)
+    public function diskusiShow(int $id)
     {
-        return response()->json($this->reportService->getDiskusiForReport($id), 200);
+        $data = $this->reportService->getDiskusiForReport($id);
+        return $this->success($data);
     }
 
     /**
@@ -197,6 +179,7 @@ class ReportController extends Controller
      */
     public function likedReports()
     {
-        return response()->json($this->reportService->getLikedReports(), 200);
+        $data = $this->reportService->getLikedReports();
+        return $this->success($data);
     }
 }
