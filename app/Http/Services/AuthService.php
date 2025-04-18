@@ -3,7 +3,7 @@
 namespace App\Http\Services;
 
 use Illuminate\Support\Facades\Auth;
-use App\Services\RoleService;
+use App\Http\Services\RoleService;
 use Illuminate\Support\Carbon;
 
 class AuthService

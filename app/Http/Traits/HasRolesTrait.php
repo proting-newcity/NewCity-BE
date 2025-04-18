@@ -1,7 +1,7 @@
 <?php
 namespace App\Http\Traits;
 
-use App\Services\RoleService;
+use App\Http\Services\RoleService;
 
 trait HasRolesTrait
 {

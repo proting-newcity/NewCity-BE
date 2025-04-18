@@ -11,6 +11,9 @@ use App\Http\Traits\ImageUploadTrait;
 class ReportService
 {
     use ImageUploadTrait;
+
+    private const MSG_NOT_FOUND = 'Report not found';
+    private const MSG_UNAUTHORIZED = 'You are not authorized!';
     /**
      * Retrieve paginated reports with related masyarakat user.
      */
@@ -101,7 +104,7 @@ class ReportService
     {
         $user = Auth::guard('sanctum')->user();
         if (!$user) {
-            return ['error' => 'You are not authorized!'];
+            return ['error' => self::MSG_UNAUTHORIZED];
         }
         return Report::where('id_masyarakat', $user->id)->paginate(10);
     }
@@ -113,7 +116,7 @@ class ReportService
     {
         $report = Report::find($reportId);
         if (!$report) {
-            return ['error' => 'Report not found'];
+            return ['error' => self::MSG_NOT_FOUND];
         }
 
         // Assign a random pemerintahan if not set.
@@ -153,7 +156,7 @@ class ReportService
     {
         $report = Report::with(['masyarakat.user:id,name', 'pemerintah.user:id,name', 'category:id,name'])->find($id);
         if (!$report) {
-            return ['error' => 'Report not found'];
+            return ['error' => self::MSG_NOT_FOUND];
         }
 
         return [
@@ -186,10 +189,10 @@ class ReportService
     {
         $report = Report::find($id);
         if (!$report) {
-            return ['error' => 'Report not found', 'error_code' => 404];
+            return ['error' => self::MSG_NOT_FOUND, 'error_code' => 404];
         }
         if ($report->masyarakat->id !== auth()->id()) {
-            return ['error' => 'You are not authorized!', 'error_code' => 401];
+            return ['error' => self::MSG_UNAUTHORIZED, 'error_code' => 401];
         }
         if ($newImage) {
             $this->deleteImage($report->foto);
@@ -206,10 +209,10 @@ class ReportService
     {
         $report = Report::find($id);
         if (!$report) {
-            return ['error' => 'Report not found'];
+            return ['error' => self::MSG_NOT_FOUND];
         }
         if ($report->masyarakat->id !== auth()->id()) {
-            return ['error' => 'You are not authorized!'];
+            return ['error' => self::MSG_UNAUTHORIZED];
         }
         $this->deleteImage($report->foto);
         $report->delete();

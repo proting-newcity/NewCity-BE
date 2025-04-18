@@ -18,7 +18,7 @@ class UpdateBeritaRequest extends FormRequest
             'content'     => 'sometimes|required|string',
             'status'      => 'sometimes|required|string|max:50',
             'foto'        => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'id_kategori' => 'required|integer|exists:kategori_berita,id',
+            'id_kategori' => 'sometimes|integer|exists:kategori_berita,id',
         ];
     }
 }

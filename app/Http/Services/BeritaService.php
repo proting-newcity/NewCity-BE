@@ -42,7 +42,7 @@ class BeritaService
      */
     public function getBeritaByCategory($categoryId)
     {
-        $berita = Berita::with([
+        return Berita::with([
             'kategori' => function ($query) {
                 $query->select('id', 'name', 'foto');
             },
@@ -52,8 +52,6 @@ class BeritaService
         ])
             ->where('id_kategori', $categoryId)
             ->paginate(10);
-
-        return ['data' => $berita];
     }
 
     /**

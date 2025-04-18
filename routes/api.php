@@ -62,6 +62,9 @@ Route::prefix('report')->group(function () {
     // get by status
     Route::get('/status/{status}', [ReportController::class, 'getReportsByStatus']);
 
+    // Get reports by logged-in user
+    Route::get('/my', [ReportController::class, 'myReports'])->middleware('auth:sanctum');
+
     // update status
     Route::post('/status/{id}', [ReportController::class, 'addStatus']);
 

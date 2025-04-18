@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Http\Requests\Masyarakat\NotificationRequest;
-use App\Services\MasyarakatService;
+use App\Http\Services\MasyarakatService;
 use App\Http\Traits\ApiResponseTrait;
 
 

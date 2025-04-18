@@ -34,7 +34,7 @@ class BeritaController extends Controller
     public function getByCategory($categoryId)
     {
         $result = $this->beritaService->getBeritaByCategory($categoryId);
-        if (empty($result['data'])) {
+        if ($result->total() === 0) {
             return $this->error('No berita found for this category', Response::HTTP_NOT_FOUND);
         }
         return $this->success($result);

@@ -20,7 +20,7 @@ class RegisteredUserController extends Controller
      *
      * @throws \Illuminate\Validation\ValidationException
      */
-    public function store(RegisterRequest $request): Response
+    public function store(RegisterRequest $request)
     {
 
         $this->registrationService->register(

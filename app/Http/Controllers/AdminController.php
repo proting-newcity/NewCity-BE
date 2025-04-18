@@ -18,6 +18,7 @@ class AdminController extends Controller
     use ApiResponseTrait;
 
     public function __construct(protected AdminService $adminService) {}
+    
 
     /**
      * Register a new Pemerintah account.
@@ -60,7 +61,7 @@ class AdminController extends Controller
     /**
      * Show details for a given Pemerintah.
      */
-    public function showPemerintah(AuthAdminRequest $id)
+    public function showPemerintah(AuthAdminRequest $request, $id)
     {
         $data = $this->adminService->getPemerintahDetails($id);
         if (isset($data['error'])) {

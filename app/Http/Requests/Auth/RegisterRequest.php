@@ -16,7 +16,7 @@ class RegisterRequest extends FormRequest
     {
         return [
             'name'         => ['required', 'string', 'max:255'],
-            'username'     => ['required', 'string', 'max:255', 'unique:users,username'],
+            'username'     => ['required', 'string', 'max:255', 'unique:user,username'],
             'password'     => ['required', 'confirmed', Rules\Password::defaults()],
             'role'         => ['nullable', 'string', 'in:masyarakat,pemerintah'],
             'institusi_id' => ['nullable', 'exists:institusi,id', 'required_if:role,pemerintah'],

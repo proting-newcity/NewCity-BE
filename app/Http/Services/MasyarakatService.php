@@ -1,5 +1,5 @@
 <?php
-namespace App\Services;
+namespace App\Http\Services;
 
 use App\Models\Masyarakat;
 use App\Http\Resources\Masyarakat\NotificationResource;
@@ -39,9 +39,9 @@ class MasyarakatService
         );
     }
 
-    protected function mapItem($item, string $type): array
+    protected function mapItem($item, string $type): object
     {
-        return [
+        return (object) [
             'foto_profile' => $item->user->foto ?? null,
             'name' => $item->user->name ?? 'Unknown User',
             'type' => $type,
