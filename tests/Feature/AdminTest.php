@@ -21,41 +21,38 @@ class AdminTest extends TestCase
     private const PATH_UPDATE = '/api/pemerintah';
     private const PATH_UBAH_PASSWORD = '/api/reset-password';
 
-    /** @test */
-    public function store_pemerintah_requires_authentication()
+    public function testStorePemerintahRequiresAuthentication()
     {
         $response = $this->postJson(self::PATH_STORE, [
-            'name'         => 'John Doe',
-            'username'     => 'johndoe',
-            'phone'        => '12345679',
-            'password'     => 'Password1',
-            'status'       => true,
+            'name' => 'John Doe',
+            'username' => 'johndoe',
+            'phone' => '12345679',
+            'password' => 'Password1',
+            'status' => true,
             'institusi_id' => 1,
         ]);
 
         $response->assertStatus(401)
-                 ->assertJson(['message' => 'Unauthenticated.']);
+            ->assertJson(['message' => 'Unauthenticated.']);
     }
 
-    /** @test */
-    public function store_pemerintah_validation_error()
+    public function testStorePemerintahValidationError()
     {
         $user = User::factory()->create();
         Admin::factory()->create(['id' => $user->id]);
         $this->actingAs($user, 'sanctum');
 
         $response = $this->postJson(self::PATH_STORE, [
-            'name'   => 'John',
+            'name' => 'John',
             'username' => 'johndoe',
-            'phone'    => '12345678',
-            'status'   => true,
+            'phone' => '12345678',
+            'status' => true,
         ]);
 
         $response->assertStatus(422);
     }
 
-    /** @test */
-    public function store_pemerintah_success()
+    public function testStorePemerintahSuccess()
     {
         $user = User::factory()->create();
         Admin::factory()->create(['id' => $user->id]);
@@ -66,13 +63,13 @@ class AdminTest extends TestCase
         $file = UploadedFile::fake()->image('foto.jpg');
 
         $payload = [
-            'name'         => 'John Doe',
-            'username'     => 'johndoe',
-            'phone'        => '123456789',
-            'password'     => 'Password1',
-            'status'       => true,
+            'name' => 'John Doe',
+            'username' => 'johndoe',
+            'phone' => '123456789',
+            'password' => 'Password1',
+            'status' => true,
             'institusi_id' => 1,
-            'foto'         => $file,
+            'foto' => $file,
         ];
 
         $response = $this->post(self::PATH_STORE, $payload);
@@ -85,8 +82,7 @@ class AdminTest extends TestCase
         Event::assertDispatched(Registered::class);
     }
 
-    /** @test */
-    public function update_pemerintah_validation_error()
+    public function testUpdatePemerintahvalidationError()
     {
         $user = User::factory()->create();
         Admin::factory()->create(['id' => $user->id]);
@@ -97,11 +93,10 @@ class AdminTest extends TestCase
         ]);
 
         $response->assertStatus(422)
-                 ->assertJsonValidationErrors('username');
+            ->assertJsonValidationErrors('username');
     }
 
-    /** @test */
-    public function update_pemerintah_not_found()
+    public function testUpdatePemerintahNotFound()
     {
         $user = User::factory()->create();
         Admin::factory()->create(['id' => $user->id]);
@@ -110,21 +105,20 @@ class AdminTest extends TestCase
         Institusi::factory()->create(['id' => 1, 'name' => 'TestInstitusi']);
 
         $payload = [
-            'name'         => 'Name',
-            'username'     => 'user',
-            'phone'        => '123',
-            'status'       => true,
+            'name' => 'Name',
+            'username' => 'user',
+            'phone' => '123',
+            'status' => true,
             'institusi_id' => 1,
         ];
 
         $response = $this->postJson(self::PATH_UPDATE . '/999', $payload);
 
         $response->assertStatus(404)
-                 ->assertJson(['message' => 'User or Pemerintah not found']);
+            ->assertJson(['message' => 'User or Pemerintah not found']);
     }
 
-    /** @test */
-    public function update_pemerintah_success()
+    public function testUpdatePemerintahSuccess()
     {
         $user = User::factory()->create();
         Admin::factory()->create(['id' => $user->id]);
@@ -133,30 +127,30 @@ class AdminTest extends TestCase
         Institusi::factory()->create(['id' => 1, 'name' => 'Test Institusi']);
         $userToUpdate = User::factory()->create([
             'password' => Hash::make('Password1'),
-            'foto'     => 'old/path.jpg',
+            'foto' => 'old/path.jpg',
         ]);
         Pemerintah::create([
-            'id'           => $userToUpdate->id,
-            'status'       => false,
-            'phone'        => '0000000',
+            'id' => $userToUpdate->id,
+            'status' => false,
+            'phone' => '0000000',
             'institusi_id' => 1,
         ]);
 
         $file = UploadedFile::fake()->image('newfoto.jpg');
         $payload = [
-            'name'         => 'New Name',
-            'username'     => 'newusername',
-            'phone'        => '9999999',
-            'password'     => 'NewPassword1',
-            'status'       => true,
+            'name' => 'New Name',
+            'username' => 'newusername',
+            'phone' => '9999999',
+            'password' => 'NewPassword1',
+            'status' => true,
             'institusi_id' => 1,
-            'foto'         => $file,
+            'foto' => $file,
         ];
 
         $response = $this->post(self::PATH_UPDATE . '/' . $userToUpdate->id, $payload);
 
         $response->assertStatus(200)
-                 ->assertJson(['message' => 'User and Pemerintah updated successfully']);
+            ->assertJson(['message' => 'User and Pemerintah updated successfully']);
 
         $updatedUser = User::find($userToUpdate->id);
         $this->assertEquals('New Name', $updatedUser->name);
@@ -165,40 +159,37 @@ class AdminTest extends TestCase
         $this->assertDatabaseHas('pemerintah', ['id' => $userToUpdate->id, 'phone' => '9999999', 'status' => true]);
     }
 
-    /** @test */
-    public function ubah_password_validation_error()
+    public function testUbahPasswordValidationError()
     {
         $user = User::factory()->create();
         Admin::factory()->create(['id' => $user->id]);
         $this->actingAs($user, 'sanctum');
 
         $response = $this->postJson(self::PATH_UBAH_PASSWORD, [
-            'username'     => '',
+            'username' => '',
             'new_password' => '',
         ]);
 
         $response->assertStatus(422)
-                 ->assertJsonValidationErrors(['username', 'new_password']);
+            ->assertJsonValidationErrors(['username', 'new_password']);
     }
 
-    /** @test */
-    public function ubah_password_user_not_found()
+    public function testUbahPasswordUserNotFound()
     {
         $user = User::factory()->create();
         Admin::factory()->create(['id' => $user->id]);
         $this->actingAs($user, 'sanctum');
 
         $response = $this->postJson(self::PATH_UBAH_PASSWORD, [
-            'username'     => 'nonexistent',
+            'username' => 'nonexistent',
             'new_password' => 'Password1',
         ]);
 
         $response->assertStatus(404)
-                 ->assertJson(['message' => 'User not found']);
+            ->assertJson(['message' => 'User not found']);
     }
 
-    /** @test */
-    public function ubah_password_success()
+    public function testUbahPasswordSuccess()
     {
         $user = User::factory()->create();
         Admin::factory()->create(['id' => $user->id]);
@@ -210,12 +201,12 @@ class AdminTest extends TestCase
         ]);
 
         $response = $this->postJson(self::PATH_UBAH_PASSWORD, [
-            'username'     => 'testuser',
+            'username' => 'testuser',
             'new_password' => 'NewPassword1',
         ]);
 
         $response->assertStatus(200)
-                 ->assertJson(['message' => 'Password updated successfully']);
+            ->assertJson(['message' => 'Password updated successfully']);
 
         $this->assertTrue(Hash::check('NewPassword1', User::find($userToChange->id)->password));
     }
