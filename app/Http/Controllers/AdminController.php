@@ -52,8 +52,9 @@ class AdminController extends Controller
     /**
      * Display a paginated list of Pemerintah.
      */
-    public function indexPemerintah(AuthAdminRequest $request)
+    public function indexPemerintah()
     {
+        app()->make(AuthAdminRequest::class);
         $data = $this->adminService->getPemerintahPaginated();
         return $this->success($data);
     }
@@ -61,8 +62,9 @@ class AdminController extends Controller
     /**
      * Show details for a given Pemerintah.
      */
-    public function showPemerintah(AuthAdminRequest $request, $id)
+    public function showPemerintah($id)
     {
+        app()->make(AuthAdminRequest::class);
         $data = $this->adminService->getPemerintahDetails($id);
         if (isset($data['error'])) {
             return $this->error($data['error'], Response::HTTP_NOT_FOUND);
