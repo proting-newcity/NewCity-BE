@@ -6,6 +6,8 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Response;
 use Tests\TestCase;
 use App\Models\Institusi;
+use App\Models\User;
+use App\Models\Admin;
 
 class InstitusiTest extends TestCase
 {
@@ -62,6 +64,13 @@ class InstitusiTest extends TestCase
      */
     public function testStoreCreatesNewInstitusi()
     {
+        $user = User::factory()->create();
+        Admin::factory()->create([
+            'id' => $user->id
+        ]);
+
+        $this->actingAs($user, 'sanctum');
+
         $postData = [
             'name' => 'New Institusi'
         ];
@@ -80,6 +89,13 @@ class InstitusiTest extends TestCase
      */
     public function testStoreValidationFailsWhenNameMissing()
     {
+        $user = User::factory()->create();
+        Admin::factory()->create([
+            'id' => $user->id
+        ]);
+
+        $this->actingAs($user, 'sanctum');
+
         // Missing the "name" field.
         $response = $this->json('POST', self::PATH_INSTITUSI, []);
         $response->assertStatus(Response::HTTP_UNPROCESSABLE_ENTITY)
@@ -91,6 +107,13 @@ class InstitusiTest extends TestCase
      */
     public function testUpdateUpdatesExistingInstitusi()
     {
+        $user = User::factory()->create();
+        Admin::factory()->create([
+            'id' => $user->id
+        ]);
+
+        $this->actingAs($user, 'sanctum');
+
         $institusi = Institusi::factory()->create(['name' => 'Old Name']);
         $updateData = ['name' => 'UpdatedName'];
 
@@ -110,6 +133,13 @@ class InstitusiTest extends TestCase
      */
     public function testUpdateReturnsNotFoundWhenInstitusiNotFound()
     {
+        $user = User::factory()->create();
+        Admin::factory()->create([
+            'id' => $user->id
+        ]);
+
+        $this->actingAs($user, 'sanctum');
+
         $nonExistentId = 9999;
         $updateData = ['name' => 'Updated Name'];
 
@@ -124,6 +154,13 @@ class InstitusiTest extends TestCase
      */
     public function testUpdateValidationFailsWhenInvalidName()
     {
+        $user = User::factory()->create();
+        Admin::factory()->create([
+            'id' => $user->id
+        ]);
+
+        $this->actingAs($user, 'sanctum');
+
         $institusi = Institusi::factory()->create(['name' => 'Valid Name']);
         // Providing a name that is too long.
         $updateData = ['name' => str_repeat('a', 300)];
@@ -139,6 +176,13 @@ class InstitusiTest extends TestCase
      */
     public function testDestroyDeletesInstitusi()
     {
+        $user = User::factory()->create();
+        Admin::factory()->create([
+            'id' => $user->id
+        ]);
+
+        $this->actingAs($user, 'sanctum');
+
         $institusi = Institusi::factory()->create();
 
         $response = $this->json('DELETE', self::PATH_INSTITUSI.$institusi->id);
@@ -154,6 +198,13 @@ class InstitusiTest extends TestCase
      */
     public function testDestroyReturnsNotFoundWhenInstitusiNotFound()
     {
+        $user = User::factory()->create();
+        Admin::factory()->create([
+            'id' => $user->id
+        ]);
+
+        $this->actingAs($user, 'sanctum');
+        
         $nonExistentId = 9999;
         $response = $this->json('DELETE', self::PATH_INSTITUSI.$nonExistentId);
 

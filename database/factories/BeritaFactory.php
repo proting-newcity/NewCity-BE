@@ -17,11 +17,11 @@ class BeritaFactory extends Factory
     public function definition()
     {
         return [
-            'title' => $this->faker->sentence(2),
-            'content' => $this->faker->paragraphs(1, true),
+            'title' => $this->faker->sentence(1),
+            'content' => $this->faker->sentence(10, true),
             'foto' => 'berita/default.jpg',
             'tanggal' => $this->faker->date('Y-m-d'),
-            'status' => 'published', 
+            'status' => 'published',
             'id_kategori' => KategoriBerita::factory(),
             'id_user' => Admin::factory(),
         ];

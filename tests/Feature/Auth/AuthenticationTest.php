@@ -85,7 +85,7 @@ class AuthenticationTest extends TestCase
         $response = $this->postJson(self::PATH_LOGIN, []);
 
         $response->assertStatus(422);
-        $response->assertJsonValidationErrors(['username', 'password', 'role']);
+        $response->assertJsonValidationErrors(['username', 'password', 'always_signed_in']);
     }
 
     public function test_user_can_logout()

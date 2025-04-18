@@ -48,12 +48,12 @@ class BeritaTest extends TestCase
 
         $response = $this->getJson("/api/berita/category/{$kategori->id}");
         $response->assertStatus(200)
-            ->assertJsonStructure(['data', 'links']);
+            ->assertJsonStructure(['data']);
     }
 
     public function testGetByCategoryNotFound()
     {
-        $response = $this->getJson('/api/berita/category/999');
+        $response = $this->getJson('/api/berita/category/99999');
         $response->assertStatus(404);
     }
 
@@ -137,7 +137,7 @@ class BeritaTest extends TestCase
     public function testSearchBeritaNotFound()
     {
         $response = $this->getJson('/api/berita/search?search=unknownkeyword');
-        $response->assertStatus(404);
+        $response->assertStatus(200)->assertJsonFragment(['data' => []]);
     }
 
     public function testLikeBerita()

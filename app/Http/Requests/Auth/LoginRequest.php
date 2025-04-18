@@ -30,7 +30,7 @@ class LoginRequest extends FormRequest
         return [
             'username' => ['required', 'string'],
             'password' => ['required', 'string'],
-            'role' => ['required', 'string', 'in:masyarakat,pemerintah,admin'],
+            'always_signed_in' => ['required', 'boolean'],
         ];
     }
 

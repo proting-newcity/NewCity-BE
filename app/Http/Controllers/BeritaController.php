@@ -2,184 +2,104 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\RatingBerita;
+use App\Http\Requests\Berita\StoreBeritaRequest;
+use App\Http\Requests\Berita\UpdateBeritaRequest;
+use App\Http\Requests\Berita\SearchBeritaRequest;
+use App\Http\Services\BeritaService;
+use App\Http\Resources\Berita\BeritaResource;
+use App\Http\Traits\ApiResponseTrait;
+use Illuminate\Http\Response;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
-
-use App\Models\Berita;
 
 class BeritaController extends Controller
 {
-    private const STRING_MAX_50 = 'required|string|max:50';
+    use ApiResponseTrait;
+
+    public function __construct(protected BeritaService $beritaService)
+    {
+    }
+
+    /**
+     * Display a paginated list of Berita.
+     */
     public function index()
     {
-        $berita = Berita::with([
-            'kategori' => function ($query) {
-                $query->select('id', 'name', 'foto');
-            },
-            'user' => function ($query) {
-                $query->select('id', 'name');
-            }
-        ])
-            ->paginate(10); // 10 items per page
-
-
-        $berita->getCollection()->transform(function ($item) {
-            $item->like_count = RatingBerita::where('id_berita', $item->id)->count();
-            if (auth('sanctum')->check()) {
-                $item->hasLiked = auth('sanctum')->user()->toggleLikeBerita($item->id, true);
-            } else {
-                $item->hasLiked = false;
-            }
-            return $item;
-        });
-
-        return response()->json($berita);
+        $paginated = $this->beritaService->getPaginatedBerita();
+        return $this->success($paginated);
     }
 
+    /**
+     * Display Berita filtered by category.
+     */
     public function getByCategory($categoryId)
     {
-        $berita = Berita::with([
-            'kategori' => function ($query) {
-                $query->select('id', 'name', 'foto');
-            },
-            'user' => function ($query) {
-                $query->select('id', 'name');
-            }
-        ])
-            ->where('id_kategori', $categoryId)
-            ->paginate(10);
-
-
-
-        if ($berita->isEmpty()) {
-            return response()->json(['message' => 'No berita found for this category'], 404);
+        $result = $this->beritaService->getBeritaByCategory($categoryId);
+        if ($result->total() === 0) {
+            return $this->error('No berita found for this category', Response::HTTP_NOT_FOUND);
         }
-
-        // Return the paginated result
-        return response()->json($berita, 200);
+        return $this->success($result);
     }
 
-
-    public function store(Request $request)
+    /**
+     * Create a new Berita entry.
+     */
+    public function store(StoreBeritaRequest $request)
     {
-        $validator = Validator::make($request->all(), [
-            'title' => self::STRING_MAX_50,
-            'content' => 'required|string',
-            'foto' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'status' => self::STRING_MAX_50,
-            'id_kategori' => 'required|integer|exists:kategori_berita,id',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
-
-        if (!$this->checkRole("admin")) {
-            return response()->json(['error' => 'You are not authorized!'], 401);
-        }
-
-        $fotoPath = $this->uploadImage($request->file('foto'), 'berita');
-
-        $berita = Berita::create([
-            'title' => $request->title,
-            'content' => $request->content,
-            'foto' => $fotoPath,
-            'status' => $request->status,
-            'id_kategori' => $request->id_kategori,
-            'id_user' => auth()->user()->id,
-        ]);
-
-        return response()->json($berita, 201);
+        $berita = $this->beritaService->createBerita(
+            $request->validated(),
+            $request->file('foto')
+        );
+        return $this->success(new BeritaResource($berita), Response::HTTP_CREATED);
     }
 
-    public function update(Request $request, $id)
+    /**
+     * Update an existing Berita entry.
+     */
+    public function update(UpdateBeritaRequest $request, $id)
     {
-        $validator = Validator::make($request->all(), [
-            'title' => 'nullable|string|max:100',
-            'content' => 'nullable|string',
-            'status' => self::STRING_MAX_50,
-            'id_kategori' => 'required|integer|exists:kategori_berita,id',
-        ]);
-
-        // Validation error handling
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
-        }
-
-        $berita = Berita::find($id);
-
-        $errors = [];
-        if (!$berita) {
-            $errors[] = ['message' => 'Berita not found'];
-        } elseif (!$this->checkOwner($berita->admin->id)) {
-            $errors[] = ['message' => 'You are not authorized!'];
-        }
-
-        if (!empty($errors)) {
-            return response()->json($errors, empty($berita) ? 404 : 401);
-        }
-
-        $berita->update($request->only(['title', 'content', 'lokasi', 'status', 'id_kategori']));
-
-        if ($request->hasFile('foto')) {
-            if ($berita->foto) {
-                $this->deleteImage($berita->foto);
-            }
-            $berita->foto = $this->uploadImage($request->file('foto'), 'berita');
-        }
-
-        $berita->save();
-        return response()->json($berita, 200);
+        $result = $this->beritaService->updateBerita(
+            $id,
+            $request->validated(),
+            $request->file('foto')
+        );
+        $status = isset($result['error']) ? $result['error_code'] : Response::HTTP_OK;
+        return $status === Response::HTTP_OK
+            ? $this->success($result)
+            : $this->error($result['error'], $status);
     }
 
-
+    /**
+     * Delete a Berita entry.
+     */
     public function destroy($id)
     {
-        $berita = Berita::find($id);
-
-        if (!$berita) {
-            return response()->json(['message' => 'Berita not found'], 404);
-        }
-
-        if ($berita->foto) {
-            $this->deleteImage($berita->foto);
-        }
-
-        $berita->delete();
-
-        return response()->json(['message' => 'Berita deleted successfully'], 200);
+        $result = $this->beritaService->deleteBerita($id);
+        $status = isset($result['error']) ? Response::HTTP_NOT_FOUND : Response::HTTP_OK;
+        return $status === Response::HTTP_OK
+            ? $this->success($result)
+            : $this->error($result['error'], $status);
     }
 
-    public function searchBerita(Request $request)
+    /**
+     * Search for Berita by title, content, or status.
+     */
+    public function searchBerita(SearchBeritaRequest $request)
     {
-
-        $search = $request->input('search');
-
-        $reports = Berita::where('title', 'like', "%$search%")
-            ->orWhere('content', 'like', "%$search%")
-            ->orWhere('status', 'like', "%$search%")->with([
-                    'kategori' => function ($query) {
-                        $query->select('id', 'name', 'foto');
-                    },
-                    'user' => function ($query) {
-                        $query->select('id', 'name');
-                    }
-                ])
-            ->paginate(10);
-
-        if ($reports->isEmpty()) {
-            return response()->json(['message' => 'No reports found'], 404);
+        $result = $this->beritaService->searchBerita(
+            $request->validated()['search']
+        );
+        if (empty($result['data'])) {
+            return $this->error('No reports found', Response::HTTP_NOT_FOUND);
         }
-
-        return response()->json($reports, 200);
+        return $this->success($result);
     }
 
+    /**
+     * Toggle like for a Berita entry.
+     */
     public function like(Request $request)
     {
-        $berita = Berita::find($request->id);
-        $response = auth()->user()->toggleLikeBerita($berita->id, false);
-
-        return response()->json(['success' => $response]);
+        $result = $this->beritaService->toggleLikeBerita($request->id);
+        return $this->success(['success' => $result]);
     }
 }

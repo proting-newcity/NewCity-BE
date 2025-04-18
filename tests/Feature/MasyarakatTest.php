@@ -18,12 +18,11 @@ class MasyarakatTest extends TestCase
 
     public function testNotificationUnauthorizedUser()
     {
-        $user = User::factory()->create(); // Non-masyarakat user
+        $user = User::factory()->create();
 
         $response = $this->actingAs($user)->json('GET', self::PATH_NOTIFICATION);
 
-        $response->assertStatus(Response::HTTP_UNAUTHORIZED)
-            ->assertJson(['error' => 'You are not authorized!']);
+        $response->assertStatus(403);
     }
 
     public function testNotificationAuthorizedUser()

@@ -3,271 +3,211 @@
 namespace Tests\Feature;
 
 use Tests\TestCase;
-use Illuminate\Http\Request;
-use Illuminate\Http\UploadedFile;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Auth\Events\Registered;
+use Illuminate\Support\Facades\Hash;
 use App\Models\User;
 use App\Models\Pemerintah;
 use App\Models\Institusi;
-use App\Http\Controllers\AdminController;
+use App\Models\Admin;
 
 class AdminTest extends TestCase
 {
-    private const PATH_STORE = '/store-pemerintah';
-    private const PATH_UPDATE = '/update-pemerintah';
-    private const PATH_UBAH_PASSWORD = '/ubah-password';
-
     use RefreshDatabase;
 
-    /**
-     * Setup before each test.
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        \Storage::fake('public');
-    }
+    private const PATH_STORE = '/api/pemerintah';
+    private const PATH_UPDATE = '/api/pemerintah';
+    private const PATH_UBAH_PASSWORD = '/api/reset-password';
 
-    /**
-     * Create a partial mock of the AdminController to override helper methods.
-     */
-    private function getControllerMock(array $additionalMethods = [])
+    public function testStorePemerintahRequiresAuthentication()
     {
-        return $this->getMockBuilder(AdminController::class)
-            ->onlyMethods(array_merge(['checkRole', 'uploadImage', 'deleteImage'], $additionalMethods))
-            ->getMock();
-    }
-
-    /**
-     * Test storePemerintah returns unauthorized when the role check fails.
-     */
-    public function testStorePemerintahUnauthorized()
-    {
-        $controller = $this->getControllerMock();
-        $controller->method('checkRole')->with("admin")->willReturn(false);
-
-        $request = Request::create(self::PATH_STORE, 'POST', [
+        $response = $this->postJson(self::PATH_STORE, [
             'name' => 'John Doe',
             'username' => 'johndoe',
-            'phone' => '123456789',
+            'phone' => '12345679',
             'password' => 'Password1',
             'status' => true,
+            'institusi_id' => 1,
         ]);
 
-        $response = $controller->storePemerintah($request);
-        $this->assertEquals(401, $response->getStatusCode());
-        $data = json_decode($response->getContent(), true);
-        $this->assertEquals('You are not authorized!', $data['error']);
+        $response->assertStatus(401)
+            ->assertJson(['message' => 'Unauthenticated.']);
     }
 
-    /**
-     * Test storePemerintah returns validation error with missing data.
-     */
     public function testStorePemerintahValidationError()
     {
-        $controller = $this->getControllerMock();
-        $controller->method('checkRole')->with("admin")->willReturn(true);
+        $user = User::factory()->create();
+        Admin::factory()->create(['id' => $user->id]);
+        $this->actingAs($user, 'sanctum');
 
-        $request = Request::create(self::PATH_STORE, 'POST', [
+        $response = $this->postJson(self::PATH_STORE, [
             'name' => 'John',
             'username' => 'johndoe',
             'phone' => '12345678',
             'status' => true,
         ]);
 
-        $response = $controller->storePemerintah($request);
-        $this->assertEquals(422, $response->getStatusCode());
+        $response->assertStatus(422);
     }
 
-    /**
-     * Test storePemerintah works correctly when valid data is passed.
-     */
     public function testStorePemerintahSuccess()
     {
-        $controller = $this->getControllerMock();
-        $controller->method('checkRole')->with("admin")->willReturn(true);
-        $controller->method('uploadImage')->willReturn('fake/path/image.jpg');
+        $user = User::factory()->create();
+        Admin::factory()->create(['id' => $user->id]);
+        $this->actingAs($user, 'sanctum');
 
         Event::fake();
-
-        $password = 'Password1';
-
+        Institusi::factory()->create(['id' => 1, 'name' => 'Test Institusi']);
         $file = UploadedFile::fake()->image('foto.jpg');
 
-        Institusi::factory()->create(['name' => 'Test Institusi', 'id' => 1]);
-
-        $request = Request::create(self::PATH_STORE, 'POST', [
+        $payload = [
             'name' => 'John Doe',
             'username' => 'johndoe',
-            'phone' => '12356789',
-            'password' => $password,
+            'phone' => '123456789',
+            'password' => 'Password1',
             'status' => true,
             'institusi_id' => 1,
-        ], [], ['foto' => $file]);
+            'foto' => $file,
+        ];
 
-        $response = $controller->storePemerintah($request);
-        // Expecting a noContent response (HTTP 204)
-        $this->assertEquals(204, $response->getStatusCode());
+        $response = $this->post(self::PATH_STORE, $payload);
 
-        // Check that the user is created in the database.
-        $user = User::where('username', 'johndoe')->first();
-        $this->assertNotNull($user);
-        $this->assertTrue(Hash::check($password, $user->password));
+        $response->assertStatus(204);
+        $this->assertDatabaseHas('user', ['username' => 'johndoe']);
+        $this->assertTrue(Hash::check('Password1', User::where('username', 'johndoe')->first()->password));
+        $this->assertDatabaseHas('pemerintah', ['phone' => '123456789']);
 
-        // Check the associated Pemerintah record.
-        $pemerintah = Pemerintah::find($user->id);
-        $this->assertNotNull($pemerintah);
-        $this->assertEquals('12356789', $pemerintah->phone);
-
-        // Assert that the Registered event was dispatched.
         Event::assertDispatched(Registered::class);
     }
 
-    /**
-     * Test updatePemerintah returns validation error.
-     */
-    public function testUpdatePemerintahValidationError()
+    public function testUpdatePemerintahvalidationError()
     {
-        $controller = $this->getControllerMock();
+        $user = User::factory()->create();
+        Admin::factory()->create(['id' => $user->id]);
+        $this->actingAs($user, 'sanctum');
 
-        $request = Request::create(self::PATH_UPDATE, 'POST', [
+        $response = $this->postJson(self::PATH_UPDATE . '/1', [
             'username' => str_repeat('a', 300),
         ]);
-        $response = $controller->updatePemerintah($request, 1);
-        $this->assertEquals(422, $response->getStatusCode());
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors('username');
     }
 
-    /**
-     * Test updatePemerintah returns 404 when the User or Pemerintah is not found.
-     */
-    public function testUpdatePemerintahUserNotFound()
+    public function testUpdatePemerintahNotFound()
     {
-        $controller = $this->getControllerMock();
+        $user = User::factory()->create();
+        Admin::factory()->create(['id' => $user->id]);
+        $this->actingAs($user, 'sanctum');
 
-        $request = Request::create(self::PATH_UPDATE, 'POST', []);
-        $response = $controller->updatePemerintah($request, 999); // non-existent ID
-        $this->assertEquals(404, $response->getStatusCode());
-        $data = json_decode($response->getContent(), true);
-        $this->assertEquals('User or Pemerintah not found', $data['message']);
+        Institusi::factory()->create(['id' => 1, 'name' => 'TestInstitusi']);
+
+        $payload = [
+            'name' => 'Name',
+            'username' => 'user',
+            'phone' => '123',
+            'status' => true,
+            'institusi_id' => 1,
+        ];
+
+        $response = $this->postJson(self::PATH_UPDATE . '/999', $payload);
+
+        $response->assertStatus(404)
+            ->assertJson(['message' => 'User or Pemerintah not found']);
     }
 
-    /**
-     * Test updatePemerintah successfully updates the user and pemerintah.
-     */
     public function testUpdatePemerintahSuccess()
     {
-        Institusi::factory()->create(['name' => 'Test Institusi', 'id' => 1]);
-        $password = 'Password1';
-        $user = User::create([
-            'name' => 'Old Name',
-            'username' => 'oldusername',
-            'password' => Hash::make($password),
+        $user = User::factory()->create();
+        Admin::factory()->create(['id' => $user->id]);
+        $this->actingAs($user, 'sanctum');
+
+        Institusi::factory()->create(['id' => 1, 'name' => 'Test Institusi']);
+        $userToUpdate = User::factory()->create([
+            'password' => Hash::make('Password1'),
             'foto' => 'old/path.jpg',
         ]);
         Pemerintah::create([
-            'id' => $user->id,
+            'id' => $userToUpdate->id,
             'status' => false,
             'phone' => '0000000',
             'institusi_id' => 1,
         ]);
 
-        $controller = $this->getControllerMock();
-        // Override uploadImage and deleteImage for file handling.
-        $controller->method('uploadImage')->willReturn('new/path.jpg');
-        $controller->method('deleteImage')->willReturn(true);
-
-        $newPassword = 'NewPassword1';
-        $newData = [
+        $file = UploadedFile::fake()->image('newfoto.jpg');
+        $payload = [
             'name' => 'New Name',
             'username' => 'newusername',
             'phone' => '9999999',
-            'password' => $newPassword,
+            'password' => 'NewPassword1',
             'status' => true,
+            'institusi_id' => 1,
+            'foto' => $file,
         ];
-        $file = UploadedFile::fake()->image('newfoto.jpg');
-        $request = Request::create(self::PATH_UPDATE, 'POST', $newData, [], ['foto' => $file]);
 
-        $response = $controller->updatePemerintah($request, $user->id);
-        $this->assertEquals(200, $response->getStatusCode());
+        $response = $this->post(self::PATH_UPDATE . '/' . $userToUpdate->id, $payload);
 
-        $data = json_decode($response->getContent(), true);
-        $this->assertEquals('User and Pemerintah updated successfully', $data['message']);
+        $response->assertStatus(200)
+            ->assertJson(['message' => 'User and Pemerintah updated successfully']);
 
-        // Retrieve updated models.
-        $updatedUser = User::find($user->id);
+        $updatedUser = User::find($userToUpdate->id);
         $this->assertEquals('New Name', $updatedUser->name);
         $this->assertEquals('newusername', $updatedUser->username);
-        $this->assertTrue(Hash::check($newPassword, $updatedUser->password));
-        $this->assertEquals('new/path.jpg', $updatedUser->foto);
-
-        $updatedPemerintah = Pemerintah::find($user->id);
-        $this->assertEquals('9999999', $updatedPemerintah->phone);
-        $this->assertEquals(true, $updatedPemerintah->status);
+        $this->assertTrue(Hash::check('NewPassword1', $updatedUser->password));
+        $this->assertDatabaseHas('pemerintah', ['id' => $userToUpdate->id, 'phone' => '9999999', 'status' => true]);
     }
 
-    /**
-     * Test ubahPassword returns validation error when required fields are missing.
-     */
     public function testUbahPasswordValidationError()
     {
-        $controller = $this->getControllerMock();
+        $user = User::factory()->create();
+        Admin::factory()->create(['id' => $user->id]);
+        $this->actingAs($user, 'sanctum');
 
-        $request = Request::create(self::PATH_UBAH_PASSWORD, 'POST', [
+        $response = $this->postJson(self::PATH_UBAH_PASSWORD, [
             'username' => '',
-            'new_password' => ''
+            'new_password' => '',
         ]);
-        $response = $controller->ubahPassword($request);
-        $this->assertEquals(422, $response->getStatusCode());
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['username', 'new_password']);
     }
 
-    /**
-     * Test ubahPassword returns 404 when the user is not found.
-     */
     public function testUbahPasswordUserNotFound()
     {
-        $controller = $this->getControllerMock();
+        $user = User::factory()->create();
+        Admin::factory()->create(['id' => $user->id]);
+        $this->actingAs($user, 'sanctum');
 
-        $request = Request::create(self::PATH_UBAH_PASSWORD, 'POST', [
+        $response = $this->postJson(self::PATH_UBAH_PASSWORD, [
             'username' => 'nonexistent',
-            'new_password' => 'Password1'
+            'new_password' => 'Password1',
         ]);
-        $response = $controller->ubahPassword($request);
-        $this->assertEquals(404, $response->getStatusCode());
 
-        $data = json_decode($response->getContent(), true);
-        $this->assertEquals('User not found', $data['message']);
+        $response->assertStatus(404)
+            ->assertJson(['message' => 'User not found']);
     }
 
-    /**
-     * Test ubahPassword successfully updates the user's password.
-     */
     public function testUbahPasswordSuccess()
     {
-        $password = 'Password1';
-        $user = User::create([
-            'name' => 'Test User',
+        $user = User::factory()->create();
+        Admin::factory()->create(['id' => $user->id]);
+        $this->actingAs($user, 'sanctum');
+
+        $userToChange = User::factory()->create([
             'username' => 'testuser',
-            'password' => Hash::make($password),
+            'password' => Hash::make('Password1'),
         ]);
 
-        $controller = $this->getControllerMock();
-
-        $newPassword = 'NewPassword1';
-        $request = Request::create(self::PATH_UBAH_PASSWORD, 'POST', [
+        $response = $this->postJson(self::PATH_UBAH_PASSWORD, [
             'username' => 'testuser',
-            'new_password' => $newPassword,
+            'new_password' => 'NewPassword1',
         ]);
 
-        $response = $controller->ubahPassword($request);
-        $this->assertEquals(200, $response->getStatusCode());
+        $response->assertStatus(200)
+            ->assertJson(['message' => 'Password updated successfully']);
 
-        $data = json_decode($response->getContent(), true);
-        $this->assertEquals('Password updated successfully', $data['message']);
-
-        $updatedUser = User::find($user->id);
-        $this->assertTrue(Hash::check($newPassword, $updatedUser->password));
+        $this->assertTrue(Hash::check('NewPassword1', User::find($userToChange->id)->password));
     }
 }
