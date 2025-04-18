@@ -69,6 +69,4 @@ abstract class Controller
             unlink($thumbnailPath);
         }
     }
-
-
 }
