@@ -1,12 +1,57 @@
 <?php
 namespace App\Http\Services;
 
+use App\Models\User;
 use App\Models\Masyarakat;
 use App\Http\Resources\Masyarakat\NotificationResource;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Hash;
+use App\Http\Traits\ImageUploadTrait;
+use Illuminate\Support\Facades\Auth;
+
 
 class MasyarakatService
 {
+    use ImageUploadTrait;
+
+    /**
+     * Update an existing Masyarakat account.
+     */
+    public function updateMasyarakat(array $data, $foto = null)
+    {
+        $user = Auth::user();
+        $masyarakat = Masyarakat::find(Auth::user()->id);
+
+        if (!$user || !$masyarakat) {
+            return ['error' => 'User or Masyarakat not found', 'error_code' => 404];
+        }
+
+        if ($foto) {
+            if ($user->foto) {
+                $this->deleteImage($user->foto);
+            }
+            $user->foto = $this->uploadImage($foto, 'users');
+        }
+
+        if (isset($data['name'])) {
+            $user->name = $data['name'];
+        }
+        if (isset($data['username'])) {
+            $user->username = $data['username'];
+            $masyarakat->phone = $data['username'];
+        }
+        if (isset($data['password'])) {
+            $user->password = Hash::make($data['password']);
+        }
+        $user->save();
+        $masyarakat->save();
+
+        return [
+            'message'   => 'User and Masyarakat updated successfully',
+            'user'      => $user,
+            'masyarakat'=> $masyarakat,
+        ];
+    }
     public function getNotifications(Masyarakat $masyarakat, int $perPage = 10, int $page = 1): LengthAwarePaginator
     {
         // get diskusi

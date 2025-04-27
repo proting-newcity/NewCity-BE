@@ -144,6 +144,9 @@ Route::prefix('pemerintah')->middleware('auth:sanctum')->group(function () {
 
 Route::prefix('masyarakat')->group(function () {
     Route::get('/search', [AdminController::class, 'searchMasyarakatByPhone']);
+
+    // update masyarakat
+    Route::post('/', [MasyarakatController::class, 'updateMasyarakat'])->middleware('auth:sanctum');
 });
 
 Route::apiResource('institusi', InstitusiController::class);
