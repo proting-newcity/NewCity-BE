@@ -15,11 +15,11 @@ return [
     |
     */
 
-    'paths' => ['*'],
+    'paths' => [ 'api/*', 'sanctum/csrf-cookie',],
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['*'], // sesuaikan
+    'allowed_origins' => ['https://newcity.alvanm.my.id',],
 
     'allowed_origins_patterns' => [],
 
