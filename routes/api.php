@@ -19,7 +19,7 @@ Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
     $user->getRoles();
 
     return response()->json($user);
-});
+})->middleware('auth:sanctum');
 
 route::get('/users', function () {
     return UserResource::collection(User::all());
