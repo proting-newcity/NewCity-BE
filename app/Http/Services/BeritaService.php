@@ -118,7 +118,7 @@ class BeritaService
      */
     public function searchBerita($search)
     {
-        $berita = Berita::where('title', 'like', "%{$search}%")
+        return Berita::where('title', 'like', "%{$search}%")
             ->orWhere('content', 'like', "%{$search}%")
             ->orWhere('status', 'like', "%{$search}%")
             ->with([
@@ -130,8 +130,6 @@ class BeritaService
                 }
             ])
             ->paginate(10);
-
-        return ['data' => $berita];
     }
 
     /**
