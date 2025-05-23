@@ -38,6 +38,21 @@ class BeritaService
     }
 
     /**
+     * Retrieve details for a specific berita.
+     */
+    public function getBeritaDetails($id)
+    {
+        return Berita::with([
+            'kategori' => function ($query) {
+                $query->select('id', 'name', 'foto');
+            },
+            'user' => function ($query) {
+                $query->select('id', 'name');
+            }
+        ])->find($id);
+    }
+
+    /**
      * Get Berita entries filtered by category.
      */
     public function getBeritaByCategory($categoryId)
@@ -79,10 +94,6 @@ class BeritaService
         $berita = Berita::find($id);
         if (!$berita) {
             return ['error' => 'Berita not found', 'error_code' => 404];
-        }
-
-        if (!isset($berita->admin) || $berita->admin->id !== auth()->id()) {
-            return ['error' => 'You are not authorized!', 'error_code' => 401];
         }
 
         $berita->update(array_intersect_key($data, array_flip(['title', 'content', 'status', 'id_kategori'])));

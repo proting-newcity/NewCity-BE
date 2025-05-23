@@ -15,7 +15,7 @@ class PemerintahResource extends JsonResource
             'phone'        => $this->phone,
             'institusi_id' => $this->institusi_id,
             'status'       => $this->status,
-            'foto'         => $this->foto,
+            'foto'         => $this->user->foto,
         ];
     }
 }

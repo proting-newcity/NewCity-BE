@@ -97,6 +97,9 @@ Route::prefix('berita')->group(function () {
 
     //search
     Route::get('/search', [BeritaController::class, 'searchBerita']);
+    
+    // Get by id
+    Route::get('/{id}', [BeritaController::class, 'show']);
 
     // update
     Route::post('/{id}', [BeritaController::class, 'update'])->middleware('auth:sanctum');

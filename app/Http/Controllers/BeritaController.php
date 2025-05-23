@@ -29,6 +29,15 @@ class BeritaController extends Controller
     }
 
     /**
+     * Display a detail Berita.
+     */
+    public function show($id)
+    {
+        $data = $this->beritaService->getBeritaDetails($id);
+        return $this->success($data);
+    }
+
+    /**
      * Display Berita filtered by category.
      */
     public function getByCategory($categoryId)
