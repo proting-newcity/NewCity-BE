@@ -24,7 +24,7 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['https://newcity.alvanm.my.id',],
+    'allowed_origins' => ['*'],
 
     'allowed_origins_patterns' => [],
 
