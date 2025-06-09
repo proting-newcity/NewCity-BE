@@ -13,5 +13,6 @@ class BookmarkRequest extends FormRequest
 
     public function rules()
     {
+        return [];
     }
 }
