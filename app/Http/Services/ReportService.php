@@ -263,4 +263,31 @@ class ReportService
         $likedReportIds = RatingReport::where('id_user', auth('sanctum')->id())->pluck('id_report');
         return Report::whereIn('id', $likedReportIds)->paginate(10);
     }
+
+    /**
+     * Retrieve reports bookmarked by the current user.
+     */
+    public function geBookmarkReports($masyarakat)
+    {
+        $reports = Report::with([
+            'masyarakat.user:id,name',
+            'pemerintah.user:id,name',
+            'category:id,name',
+        ])
+        ->join('bookmark', 'bookmark.id_report', '=', 'report.id')
+        ->where('bookmark.id_user', $masyarakat->id)
+        ->select('report.*')
+        ->paginate(10);
+
+    $reports->getCollection()->transform(function ($report) {
+        $report->pelapor = optional($report->masyarakat->user)->name;
+        unset($report->masyarakat);
+        return $report;
+    });
+
+    // Re-index so data => [0,1,2…]
+    $reports->setCollection($reports->getCollection()->values());
+
+    return $reports;
+    }
 }
