@@ -162,7 +162,7 @@ class ReportController extends Controller
     {
         $masyarakat = $request->user()->masyarakat;
         $data = $this->reportService->geBookmarkReports($masyarakat);
-        return $this->success(['success' => $data]);
+        return $this->success($data);
     }
 
     /**
