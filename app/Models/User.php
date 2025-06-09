@@ -187,7 +187,7 @@ class User extends Authenticatable
         return $this->hasMany(Bookmark::class, 'id_user', 'id');
     }
 
-    // Check Like by report id
+    // Check bookmark by report id
     public function hasBookmark($id_report)
     {
         return $this->bookmark()->where('id_report', $id_report)->exists();

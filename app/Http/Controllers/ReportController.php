@@ -157,9 +157,9 @@ class ReportController extends Controller
     /**
      * Show all bookmark for a user.
      */
-    public function bookmarkIndex(Request $request)
+    public function bookmarkIndex()
     {
-        $result = auth()->user()->bookmark()->paginate(10);
+        $result = auth()->user()->masyarakat()->bookmarks()->paginate(10);
         return $this->success(['success' => $result]);
     }
 
