@@ -69,4 +69,19 @@ class Masyarakat extends Model
             'id'
         );
     }
+
+    /**
+     * Get all bookmarks associated with the reports created by this masyarakat.
+     */
+    public function bookmarks()
+    {
+        return $this->hasManyThrough(
+            Bookmark::class,
+            Report::class,
+            'id_masyarakat',
+            'id_report',
+            'id',
+            'id'
+        );
+    }
 }
