@@ -159,7 +159,7 @@ class ReportController extends Controller
      */
     public function bookmarkIndex()
     {
-        $result = auth()->user()->masyarakat()->bookmarks()->paginate(10);
+        $result = auth()->user()->masyarakat->bookmarks()->paginate(10);
         return $this->success(['success' => $result]);
     }
 
