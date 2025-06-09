@@ -20,12 +20,20 @@ class ReportService
     public function getPaginatedReports()
     {
         $reports = Report::with('masyarakat.user:id,name')->paginate(10);
-        // Transform each report to include pelapor name
-        $reports->transform(function ($report) {
+
+        $reports->getCollection()->transform(function ($report) {
+            $statusHistory = $report->status;
+            $latestStatus = end($statusHistory);
+            if (in_array($latestStatus['status'], ['Ditolak', 'Menunggu'])) {
+                return null;
+            }
             $report->pelapor = optional($report->masyarakat->user)->name;
             unset($report->masyarakat);
+
             return $report;
         });
+        $reports->setCollection($reports->getCollection()->filter());
+
         return $reports;
     }
 
@@ -64,7 +72,7 @@ class ReportService
                     ]
                 ]
             ],
-            array_intersect_key($data, array_flip(['judul','deskripsi','lokasi','id_pemerintah','id_kategori']))
+            array_intersect_key($data, array_flip(['judul', 'deskripsi', 'lokasi', 'id_pemerintah', 'id_kategori']))
         );
         return Report::create($reportData);
     }
@@ -119,7 +127,6 @@ class ReportService
             return ['error' => self::MSG_NOT_FOUND];
         }
 
-        // Assign a random pemerintahan if not set.
         if (is_null($report->id_pemerintah)) {
             $pemerintah = Pemerintah::inRandomOrder()->first();
             $report->id_pemerintah = $pemerintah->id;
@@ -128,23 +135,31 @@ class ReportService
 
         $institusiName = optional($report->pemerintah->institusi)->name ?? 'pemerintah terkait';
         $statusMapping = [
-            'Dalam Proses'  => "Laporan sedang ditangani oleh $institusiName.",
+            'Dalam Proses' => "Laporan sedang ditangani oleh $institusiName.",
             'Tindak Lanjut' => "Laporan telah diproses oleh $institusiName.",
-            'Selesai'       => "Laporan sudah diselesaikan oleh $institusiName.",
-            'Ditolak'       => "Laporan tidak memenuhi syarat dan ketentuan yang berlaku.",
+            'Selesai' => "Laporan sudah diselesaikan oleh $institusiName.",
+            'Ditolak' => "Laporan tidak memenuhi syarat dan ketentuan yang berlaku.",
         ];
         $description = $statusMapping[$newStatus] ?? 'Status tidak diketahui';
 
-        $statusEntry = [
+        $newStatusEntry = [
             'status' => $newStatus,
             'deskripsi' => $description,
             'tanggal' => now()->toISOString(),
         ];
 
-        $statuses = $report->status;
-        $statuses[] = $statusEntry;
-        $report->status = $statuses;
-        $report->save();
+        $statuses = collect($report->status ?? []);
+
+        $isDuplicate = $statuses->contains(function ($item) use ($newStatusEntry) {
+            return $item['status'] === $newStatusEntry['status']
+                && $item['deskripsi'] === $newStatusEntry['deskripsi'];
+        });
+
+        if (!$isDuplicate) {
+            $statuses->push($newStatusEntry);
+            $report->status = $statuses->all();
+            $report->save();
+        }
 
         return $report;
     }
@@ -159,15 +174,22 @@ class ReportService
             return ['error' => self::MSG_NOT_FOUND];
         }
 
+        $report->status = collect($report->status)
+            ->unique(function ($item) {
+                return $item['status'] . '|' . $item['deskripsi'];
+            })
+            ->values()
+            ->all();
+
         return [
-            'report'     => $report,
+            'report' => $report,
             'masyarakat' => $report->masyarakat ? ['id' => $report->masyarakat->id, 'name' => $report->masyarakat->user->name] : null,
             'pemerintah' => $report->pemerintah ? ['id' => $report->pemerintah->id, 'name' => $report->pemerintah->user->name] : null,
-            'kategori'   => $report->category,
-            'like'       => RatingReport::where('id_report', $report->id)->count(),
-            'comment'    => Diskusi::where('id_report', $report->id)->count(),
-            'hasLiked'   => auth('sanctum')->check() ? auth('sanctum')->user()->toggleLikeReport($report->id, true) : false,
-            'hasBookmark'=> auth('sanctum')->check() ? auth('sanctum')->user()->toggleBookmark($report->id, true) : false,
+            'kategori' => $report->category,
+            'like' => RatingReport::where('id_report', $report->id)->count(),
+            'comment' => Diskusi::where('id_report', $report->id)->count(),
+            'hasLiked' => auth('sanctum')->check() ? auth('sanctum')->user()->toggleLikeReport($report->id, true) : false,
+            'hasBookmark' => auth('sanctum')->check() ? auth('sanctum')->user()->toggleBookmark($report->id, true) : false,
         ];
     }
 
@@ -198,7 +220,7 @@ class ReportService
             $this->deleteImage($report->foto);
             $data['foto'] = $this->uploadImage($newImage, 'reports');
         }
-        $report->update(array_intersect_key($data, array_flip(['judul','deskripsi','lokasi','status','id_pemerintah','id_kategori'])));
+        $report->update(array_intersect_key($data, array_flip(['judul', 'deskripsi', 'lokasi', 'status', 'id_pemerintah', 'id_kategori'])));
         return $report;
     }
 
