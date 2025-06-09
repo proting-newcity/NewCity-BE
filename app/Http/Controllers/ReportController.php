@@ -148,9 +148,18 @@ class ReportController extends Controller
     /**
      * Toggle bookmark on a report.
      */
-    public function bookmark(Request $request)
+    public function bookmarkStore(Request $request)
     {
         $result = auth()->user()->toggleBookmark($request->id, false);
+        return $this->success(['success' => $result]);
+    }
+
+    /**
+     * Show all bookmark for a user.
+     */
+    public function bookmarkIndex(Request $request)
+    {
+        $result = auth()->user()->bookmark()->paginate(10);
         return $this->success(['success' => $result]);
     }
 
