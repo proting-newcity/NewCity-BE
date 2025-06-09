@@ -21,21 +21,27 @@ class ReportService
     {
         $reports = Report::with('masyarakat.user:id,name')->paginate(10);
 
-        $reports->getCollection()->transform(function ($report) {
-            $statusHistory = $report->status;
-            $latestStatus = end($statusHistory);
-            if (in_array($latestStatus['status'], ['Ditolak', 'Menunggu'])) {
-                return null;
-            }
-            $report->pelapor = optional($report->masyarakat->user)->name;
-            unset($report->masyarakat);
+        $reports->getCollection()
+            ->transform(function ($report) {
+                $statusHistory = $report->status;
+                $latestStatus = end($statusHistory);
+                if (in_array($latestStatus['status'], ['Ditolak', 'Menunggu'])) {
+                    return null;
+                }
+                $report->pelapor = optional($report->masyarakat->user)->name;
+                unset($report->masyarakat);
+                return $report;
+            });
 
-            return $report;
-        });
-        $reports->setCollection($reports->getCollection()->filter());
+        $filtered = $reports->getCollection()
+            ->filter()
+            ->values();
+
+        $reports->setCollection($filtered);
 
         return $reports;
     }
+
 
     /**
      * Get reports for admin based on certain statuses.
