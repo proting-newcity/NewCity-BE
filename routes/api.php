@@ -47,8 +47,11 @@ Route::prefix('report')->group(function () {
     // like
     Route::post('/like', [ReportController::class, 'like'])->middleware('auth:sanctum');
 
-    // bookmark
-    Route::post('/bookmark', [ReportController::class, 'bookmark'])->middleware('auth:sanctum');
+    // post bookmark
+    Route::post('/bookmark', [ReportController::class, 'bookmarkStore'])->middleware('auth:sanctum');
+
+    // get bookmark
+    Route::get('/bookmark', [ReportController::class, 'bookmarkIndex'])->middleware('auth:sanctum');
 
     // post diskusi
     Route::post('/diskusi/{id}', [ReportController::class, 'diskusiStore'])->middleware('auth:sanctum');
