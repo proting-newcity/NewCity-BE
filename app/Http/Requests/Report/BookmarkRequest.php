@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Requests\Masyarakat;
+namespace App\Http\Requests\Report;
 
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -8,7 +8,6 @@ class BookmarkRequest extends FormRequest
 {
     public function authorize()
     {
-        // only masyarakat role can access notifications
         return $this->user() && $this->user()->hasRole('masyarakat');
     }
 
