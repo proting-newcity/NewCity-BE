@@ -8,7 +8,7 @@ use App\Http\Requests\Report\StoreReportRequest;
 use App\Http\Requests\Report\UpdateReportRequest;
 use App\Http\Requests\Report\AddStatusRequest;
 use App\Http\Requests\Report\DiskusiStoreRequest;
-use App\Http\Requests\Masyarakat\BookmarkRequest;
+use App\Http\Requests\Report\BookmarkRequest;
 use App\Http\Traits\ApiResponseTrait;
 
 class ReportController extends Controller
