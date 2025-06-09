@@ -8,6 +8,7 @@ use App\Http\Requests\Report\StoreReportRequest;
 use App\Http\Requests\Report\UpdateReportRequest;
 use App\Http\Requests\Report\AddStatusRequest;
 use App\Http\Requests\Report\DiskusiStoreRequest;
+use App\Http\Requests\Masyarakat\BookmarkRequest;
 use App\Http\Traits\ApiResponseTrait;
 
 class ReportController extends Controller
@@ -157,10 +158,11 @@ class ReportController extends Controller
     /**
      * Show all bookmark for a user.
      */
-    public function bookmarkIndex()
+    public function bookmarkIndex(BookmarkRequest $request)
     {
-        $result = auth()->user()->masyarakat->bookmarks()->paginate(10);
-        return $this->success(['success' => $result]);
+        $masyarakat = $request->user()->masyarakat;
+        $data = $this->reportService->geBookmarkReports($masyarakat);
+        return $this->success(['success' => $data]);
     }
 
     /**
