@@ -1,66 +1,162 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# NewCity-BE - Backend Aplikasi Pelaporan Warga
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Proyek ini adalah backend yang dibangun menggunakan Laravel 11 untuk aplikasi "NewCity", sebuah platform yang dirancang untuk menjembatani komunikasi antara masyarakat dan pemerintah melalui sistem pelaporan dan penyebaran informasi.
 
-## About Laravel
+## Deskripsi Umum
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+Aplikasi ini memiliki tiga peran pengguna utama:
+1.  **Masyarakat**: Pengguna umum yang dapat membuat laporan mengenai isu-isu di lingkungan mereka, berinteraksi dengan laporan, dan mendapatkan berita terbaru.
+2.  **Pemerintah**: Entitas pemerintah atau institusi terkait yang bertugas menanggapi dan mengelola laporan yang masuk dari masyarakat.
+3.  **Admin**: Super-user yang mengelola data master seperti akun pemerintah, institusi, kategori, dan konten berita.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+Backend ini menyediakan RESTful API yang aman untuk digunakan oleh aplikasi frontend (web atau mobile).
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+---
 
-## Learning Laravel
+## Fitur Utama
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+### Untuk Masyarakat
+* **Autentikasi**: Registrasi, login, dan logout yang aman.
+* **Manajemen Laporan**:
+    * Membuat laporan baru lengkap dengan judul, deskripsi, lokasi, dan foto.
+    * Melihat daftar laporan yang telah dibuat.
+    * Memperbarui dan menghapus laporan milik sendiri.
+    * Memberikan "like" pada laporan.
+    * Menambahkan laporan ke daftar "bookmark".
+* **Interaksi**:
+    * Berpartisipasi dalam ruang diskusi di setiap laporan.
+    * Melihat berita dan pengumuman yang dipublikasikan oleh admin.
+* **Notifikasi**: Menerima pemberitahuan terkait status laporan, diskusi baru, dan "like" yang diterima.
+* **Profil**: Memperbarui data profil pribadi, termasuk foto.
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+### Untuk Pemerintah
+* **Manajemen Laporan**:
+    * Melihat daftar laporan yang masuk.
+    * Mengubah status laporan (contoh: 'Menunggu', 'Dalam Proses', 'Selesai', 'Ditolak').
+    * Berpartisipasi dalam diskusi pada laporan untuk berkomunikasi dengan pelapor.
+* **Profil**: Memperbarui data profil dan informasi institusi.
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### Untuk Admin
+* **Manajemen Pengguna**:
+    * Membuat, melihat, memperbarui, dan menghapus akun untuk `Pemerintah`.
+    * Mencari akun `Pemerintah` dan `Masyarakat`.
+    * Mereset kata sandi pengguna.
+* **Manajemen Data Master**:
+    * CRUD (Create, Read, Update, Delete) untuk `Institusi` pemerintah.
+    * Membuat kategori untuk `Laporan` dan `Berita`.
+* **Manajemen Konten**:
+    * Membuat, memperbarui, dan menghapus `Berita`.
 
-## Laravel Sponsors
+---
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+## Teknologi yang Digunakan
 
-### Premium Partners
+* **Framework**: Laravel 11
+* **Bahasa**: PHP 8.2+
+* **API**: RESTful API dengan otentikasi berbasis token menggunakan Laravel Sanctum.
+* **Database**: Konfigurasi standar Laravel yang mendukung MySQL, PostgreSQL, SQLite, dll.
+* **Manajemen Gambar**: `intervention/image-laravel` untuk memproses unggahan gambar dan membuat thumbnail.
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+---
 
-## Contributing
+## Panduan Instalasi (Development)
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+1.  **Clone Repositori**
+    ```bash
+    git clone https://github.com/proting-newcity/NewCity-BE.git
+    cd NewCity-BE
+    ```
 
-## Code of Conduct
+2.  **Instal Dependensi**
+    ```bash
+    composer install
+    ```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+3.  **Konfigurasi Environment**
+    Salin file `.env.example` menjadi `.env`.
+    ```bash
+    cp .env.example .env
+    ```
 
-## Security Vulnerabilities
+4.  **Generate Kunci Aplikasi**
+    Perintah ini wajib dijalankan untuk mengenkripsi data sesi dan data sensitif lainnya.
+    ```bash
+    php artisan key:generate
+    ```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+5.  **Konfigurasi Database**
+    Buka file `.env` dan sesuaikan variabel koneksi database (`DB_CONNECTION`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`).
 
-## License
+6.  **Jalankan Migrasi Database**
+    Perintah ini akan membuat semua tabel yang dibutuhkan dalam database Anda.
+    ```bash
+    php artisan migrate
+    ```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+7.  **Hubungkan Folder Penyimpanan**
+    Agar file yang diunggah dapat diakses secara publik, buat symbolic link dari `public/storage` ke `storage/app/public`.
+    ```bash
+    php artisan storage:link
+    ```
+
+8.  **Jalankan Server**
+    ```bash
+    php artisan serve
+    ```
+    Server Development akan berjalan di `http://127.0.0.1:8000`.
+
+---
+
+## Daftar Endpoint API
+
+Berikut adalah daftar endpoint API yang tersedia beserta deskripsi dan hak aksesnya.
+
+| Method & Route | Deskripsi | Akses Role |
+| :--- | :--- | :--- |
+| **Autentikasi** | | |
+| `POST /api/register` | Mendaftarkan pengguna baru sebagai Masyarakat atau Pemerintah. | Publik |
+| `POST /api/login` | Login pengguna untuk mendapatkan token API. | Publik |
+| `POST /api/logout` | Logout pengguna dan membatalkan token saat ini. | Terautentikasi |
+| `POST /api/reset-password` | Mereset kata sandi pengguna (dikelola oleh Admin). | Admin |
+| `GET /api/user` | Mendapatkan detail pengguna yang sedang login. | Terautentikasi |
+| `GET /api/notification` | Mendapatkan notifikasi untuk laporan pengguna. | Masyarakat |
+| **Laporan (Report)** | | |
+| `GET /api/report` | Mendapatkan daftar laporan yang telah dipaginasi. | Publik |
+| `POST /api/report` | Membuat laporan baru. | Masyarakat |
+| `GET /api/report/{id}` | Mendapatkan detail satu laporan. | Publik |
+| `POST /api/report/{id}` | Memperbarui laporan (hanya pemilik). | Pemilik Laporan |
+| `DELETE /api/report/{id}` | Menghapus laporan (hanya pemilik). | Pemilik Laporan |
+| `GET /api/report/my` | Mendapatkan daftar laporan milik pengguna yang login. | Masyarakat |
+| `POST /api/report/status/{id}` | Menambahkan/memperbarui status sebuah laporan. | Admin, Pemerintah |
+| `POST /api/report/like` | Memberikan atau menarik "like" pada laporan. | Terautentikasi |
+| `POST /api/report/bookmark` | Menambah atau menghapus bookmark pada laporan. | Masyarakat |
+| `GET /api/report/bookmark` | Melihat daftar laporan yang di-bookmark. | Masyarakat |
+| `GET /api/report/liked` | Melihat daftar laporan yang di-"like". | Terautentikasi |
+| `POST /api/report/diskusi/{id}`| Menambahkan komentar/diskusi baru pada laporan. | Terautentikasi |
+| `GET /api/report/diskusi/{id}` | Melihat semua diskusi pada sebuah laporan. | Terautentikasi |
+| `GET /api/report/search` | Mencari laporan berdasarkan kata kunci. | Publik |
+| **Berita (Berita)** | | |
+| `GET /api/berita` | Mendapatkan daftar berita yang telah dipaginasi. | Publik |
+| `POST /api/berita` | Membuat berita baru. | Admin |
+| `GET /api/berita/{id}` | Mendapatkan detail satu berita. | Publik |
+| `POST /api/berita/{id}` | Memperbarui berita. | Admin |
+| `DELETE /api/berita/{id}` | Menghapus berita. | Admin |
+| `POST /api/berita/like` | Memberikan "like" pada berita. | Terautentikasi |
+| `GET /api/berita/search` | Mencari berita berdasarkan kata kunci. | Publik |
+| **Manajemen Admin** | | |
+| `GET /api/pemerintah` | Mendapatkan daftar semua pengguna Pemerintah. | Admin |
+| `POST /api/pemerintah` | Mendaftarkan pengguna Pemerintah baru. | Admin |
+| `GET /api/pemerintah/{id}`| Melihat detail satu pengguna Pemerintah. | Admin |
+| `POST /api/pemerintah/{id}`| Memperbarui data pengguna Pemerintah. | Admin |
+| `DELETE /api/pemerintah/{id}`| Menghapus pengguna Pemerintah. | Admin |
+| `GET /api/pemerintah/search`| Mencari pengguna Pemerintah. | Admin |
+| `GET /api/masyarakat/search`| Mencari pengguna Masyarakat berdasarkan nomor telepon. | Admin |
+| **Data Master** | | |
+| `GET /api/institusi` | Mendapatkan daftar semua institusi. | Publik |
+| `POST /api/institusi` | Membuat institusi baru. | Admin |
+| `PUT /api/institusi/{id}` | Memperbarui nama institusi. | Admin |
+| `DELETE /api/institusi/{id}`| Menghapus institusi. | Admin |
+| `GET /api/kategori/report` | Mendapatkan semua kategori laporan. | Publik |
+| `POST /api/kategori/report`| Membuat kategori laporan baru. | Admin |
+| `GET /api/kategori/berita` | Mendapatkan semua kategori berita. | Publik |
+| `POST /api/kategori/berita`| Membuat kategori berita baru. | Admin |
