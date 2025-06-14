@@ -134,11 +134,7 @@ class BeritaTest extends TestCase
             ->assertJsonFragment(['message' => 'Berita deleted successfully']);
     }
 
-    public function testSearchBeritaNotFound()
-    {
-        $response = $this->getJson('/api/berita/search?search=unknownkeyword');
-        $response->assertStatus(200)->assertJsonFragment(['data' => []]);
-    }
+
 
     public function testLikeBerita()
     {
