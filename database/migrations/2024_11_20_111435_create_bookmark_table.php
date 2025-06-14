@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('bookmark', function (Blueprint $table) {
-            $table->integer('id_user')->index('user_fk');
-            $table->integer('id_report')->index('report_fk');
+            $table->integer('id_user');
+            $table->integer('id_report');
         });
     }
 

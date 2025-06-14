@@ -12,10 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('pemerintah', function (Blueprint $table) {
-            $table->integer('id')->index('pemerintah_user');
+            $table->integer('id');
             $table->boolean('status');
             $table->string('phone');
-            $table->integer('institusi_id')->index('institusi_fk');
+            $table->integer('institusi_id');
         });
     }
 

@@ -1,0 +1,63 @@
+name: Laravel CI
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  laravel-tests:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: newcity_testing
+          MYSQL_ROOT_PASSWORD: password
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.2'
+        extensions: bcmath, ctype, fileinfo, json, mbstring, openssl, pdo, tokenizer, xml, pdo_mysql
+        coverage: none
+
+    - name: Copy .env
+      run: php -r "file_exists('.env') || copy('.env.example', '.env');"
+
+    - name: Install Composer Dependencies
+      run: composer install -q --no-ansi --no-interaction --no-plugins --no-scripts --prefer-dist
+
+    - name: Generate application key
+      run: php artisan key:generate
+
+    - name: Set Directory Permissions
+      run: chmod -R 777 storage bootstrap/cache
+
+    - name: Run Migrations
+      env:
+        DB_CONNECTION: mysql
+        DB_HOST: 127.0.0.1
+        DB_PORT: 3306
+        DB_DATABASE: newcity_testing
+        DB_USERNAME: root
+        DB_PASSWORD: password
+      run: php artisan migrate
+
+    - name: Execute tests
+      env:
+        DB_CONNECTION: mysql
+        DB_HOST: 127.0.0.1
+        DB_PORT: 3306
+        DB_DATABASE: newcity_testing
+        DB_USERNAME: root
+        DB_PASSWORD: password
+        APP_ENV: testing
+      run: php artisan test
