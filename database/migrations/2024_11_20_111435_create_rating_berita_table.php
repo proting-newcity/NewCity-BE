@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('rating_berita', function (Blueprint $table) {
-            $table->integer('id_user')->index('user_fk');
-            $table->integer('id_berita')->index('berita_fk');
+            $table->integer('id_user');
+            $table->integer('id_berita');
         });
     }
 

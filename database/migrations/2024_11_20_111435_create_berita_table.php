@@ -18,8 +18,8 @@ return new class extends Migration
             $table->string('foto');
             $table->timestamp('tanggal')->useCurrentOnUpdate()->useCurrent();
             $table->string('status', 50);
-            $table->integer('id_kategori')->index('kategori_fk');
-            $table->integer('id_user')->index('user_fk');
+            $table->integer('id_kategori');
+            $table->integer('id_user');
             $table->timestamps();
         });
     }

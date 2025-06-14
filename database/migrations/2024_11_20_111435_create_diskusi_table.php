@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::create('diskusi', function (Blueprint $table) {
             $table->string('content');
             $table->timestamp('tanggal')->useCurrentOnUpdate()->useCurrent();
-            $table->integer('id_user')->index('user_fk');
-            $table->integer('id_report')->index('report_fk');
+            $table->integer('id_user');
+            $table->integer('id_report');
         });
     }
 
