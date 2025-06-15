@@ -14,6 +14,8 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\MasyarakatController;
 use App\Http\Controllers\InstitusiController;
 
+//test changes
+
 Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
     $user = $request->user();
     $user->getRoles();
