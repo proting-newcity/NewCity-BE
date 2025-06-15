@@ -32,5 +32,5 @@ jobs:
             php artisan cache:clear
             php artisan route:clear
             php artisan queue:restart
-            sudo systemctl restart apache2  # Change to nginx if using Nginx
+            sudo systemctl restart apache2
           EOF
