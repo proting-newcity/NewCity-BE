@@ -244,7 +244,7 @@ class ReportService
         }
         $this->deleteImage($report->foto);
         $report->delete();
-        return ['message' => 'Report deleted successfully'];
+        return ['message' => 'Report berhasil dihapus'];
     }
 
     /**
