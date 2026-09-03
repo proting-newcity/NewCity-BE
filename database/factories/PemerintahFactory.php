@@ -21,12 +21,12 @@ class PemerintahFactory extends Factory
      *
      * @return array
      */
-    public function definition()
+    public function definition(): array
     {
         return [
-            'id' => User::factory()->create(),
-            'status' => $this->faker->randomNumber(1),
-            'phone' => $this->faker->phoneNumber,
+            'id' => User::factory(),
+            'status' => fake()->boolean(),
+            'phone' => fake()->phoneNumber(),
             'institusi_id' => Institusi::factory(),
         ];
     }

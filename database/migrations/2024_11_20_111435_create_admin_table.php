@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('admin', function (Blueprint $table) {
-            $table->integer('id')->index('user_fk');
+            $table->integer('id')->primary();
             $table->string('nip', 20);
         });
     }

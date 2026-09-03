@@ -12,6 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('rating_report', function (Blueprint $table) {
+            $table->id();
             $table->integer('id_user');
             $table->integer('id_report');
             $table->timestamp('tanggal')->useCurrentOnUpdate()->useCurrent();

@@ -24,7 +24,7 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['*'],
+    'allowed_origins' => explode(',', env('CORS_ALLOWED_ORIGINS', 'https://newcity.alvan.my.id')),
 
     'allowed_origins_patterns' => [],
 

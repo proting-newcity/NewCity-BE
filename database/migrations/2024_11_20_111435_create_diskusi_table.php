@@ -12,6 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('diskusi', function (Blueprint $table) {
+            $table->id();
             $table->string('content');
             $table->timestamp('tanggal')->useCurrentOnUpdate()->useCurrent();
             $table->integer('id_user');

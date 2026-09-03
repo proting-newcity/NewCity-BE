@@ -92,9 +92,7 @@ class AuthenticationTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $this->actingAs($user);
-
-        $response = $this->post('/logout');
+        $response = $this->actingAs($user)->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class)->post('/logout');
 
         $response->assertNoContent();
 
